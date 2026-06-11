@@ -1,0 +1,36 @@
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin-bottom: 18px; }
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid rgba(217,226,238,.8);
+  box-shadow: 0 12px 35px rgba(16, 24, 40, .06);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-card span { color: var(--muted); font-weight: 700; font-size: .92rem; }
+.stat-card strong { display: block; font-size: 2rem; margin-top: 6px; }
+
+.stat-icon { width: 52px; height: 52px; border-radius: 18px; display: grid; place-items: center; }
+.stat-icon.blue { background: var(--sky); color: var(--blue); }
+.stat-icon.green { background: #dcfce7; color: var(--green); }
+.stat-icon.orange { background: #fef3c7; color: var(--orange); }
+.stat-icon.red { background: #fee2e2; color: var(--red); }
+
+.content-grid { display: grid; grid-template-columns: 1.5fr .8fr; gap: 18px; align-items: start; }
+.wide-card { grid-column: span 1; }
+
+.section-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+.section-title h2,
+.panel-card h2 { margin: 4px 0 0; }
+
+.alert-list,
+.tips-list,
+.card-list { display: grid; gap: 12px; }
+
+.mini-alert,
+.tips-list span { padding: 12px; border-radius: 16px; background: var(--soft); display: grid; gap: 5px; }
+.mini-alert span { color: var(--muted); font-size: .9rem; }

@@ -1,0 +1,176 @@
+:root {
+  --navy: #073763;
+  --navy-2: #0a4f88;
+  --blue: #1d72d2;
+  --sky: #e8f3ff;
+  --green: #0f9f6e;
+  --orange: #f59e0b;
+  --red: #dc2626;
+  --text: #172033;
+  --muted: #667085;
+  --line: #d9e2ee;
+  --surface: #ffffff;
+  --soft: #f5f8fc;
+  --shadow: 0 18px 55px rgba(7, 55, 99, 0.12);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--soft);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: var(--soft); }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+
+.eyebrow {
+  color: var(--blue);
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: .76rem;
+  letter-spacing: .09em;
+}
+
+.muted { color: var(--muted); }
+
+input, select, textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  min-height: 48px;
+  padding: 12px 14px;
+  outline-color: var(--blue);
+}
+
+textarea { min-height: 96px; resize: vertical; }
+
+.icon-button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+}
+
+.primary-btn,
+.quick-action,
+.small-btn,
+.logout-btn {
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  min-height: 46px;
+  padding: 0 18px;
+  font-weight: 800;
+}
+
+.primary-btn {
+  background: var(--navy);
+  color: #fff;
+  width: 100%;
+}
+
+.primary-btn:disabled { opacity: .7; cursor: wait; }
+.quick-action { background: var(--blue); color: #fff; white-space: nowrap; }
+.small-btn { background: var(--sky); color: var(--navy); min-height: 36px; padding: 0 12px; }
+
+.secondary-link {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  color: var(--navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.secondary-link:hover { background: var(--sky); }
+
+.alert {
+  padding: 13px 14px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.alert-error { background: #fee2e2; color: #991b1b; }
+.alert-success { background: #dcfce7; color: #166534; margin-bottom: 16px; }
+
+.panel-card,
+.record-card {
+  background: var(--surface);
+  border: 1px solid rgba(217,226,238,.8);
+  box-shadow: 0 12px 35px rgba(16, 24, 40, .06);
+  border-radius: 24px;
+}
+
+.panel-card { padding: 22px; }
+
+.responsive-table { width: 100%; overflow-x: auto; }
+
+table { border-collapse: collapse; width: 100%; min-width: 720px; }
+th, td { text-align: left; padding: 13px 12px; border-bottom: 1px solid var(--line); font-size: .92rem; }
+th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
+
+.status-pill {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: .75rem;
+  font-weight: 900;
+  background: #edf2f7;
+  color: #344054;
+}
+
+.status-pill.aprobado { background: #dcfce7; color: #166534; }
+.status-pill.observado,
+.status-pill.rechazado { background: #fee2e2; color: #991b1b; }
+.status-pill.pendiente,
+.status-pill.en_revision { background: #fef3c7; color: #92400e; }
+
+.risk-pill {
+  min-width: 92px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.4px;
+  border: 1px solid transparent;
+}
+
+.risk-pill.verde { background: #dcfce7; color: #166534; border-color: #86efac; }
+.risk-pill.amarillo { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.risk-pill.rojo { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+.dark-register .risk-pill.verde { background: rgba(22, 101, 52, 0.28); color: #bbf7d0; border-color: rgba(134, 239, 172, 0.4); }
+.dark-register .risk-pill.amarillo { background: rgba(146, 64, 14, 0.28); color: #fde68a; border-color: rgba(252, 211, 77, 0.4); }
+.dark-register .risk-pill.rojo { background: rgba(127, 29, 29, 0.32); color: #fecaca; border-color: rgba(252, 165, 165, 0.4); }
+
+.input-error,
+.public-register-page input.input-error,
+.public-register-page select.input-error,
+.public-register-page textarea.input-error,
+.public-register-page .date-picker-input.input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18) !important;
+}
+
+.public-register-page.dark-register .input-error,
+.public-register-page.dark-register input.input-error,
+.public-register-page.dark-register select.input-error,
+.public-register-page.dark-register textarea.input-error,
+.public-register-page.dark-register .date-picker-input.input-error {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.2) !important;
+}

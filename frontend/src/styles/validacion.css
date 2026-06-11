@@ -1,0 +1,22 @@
+.table-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.detail-btn {
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #075985;
+  border: 1px solid #bae6fd;
+  font-size: 13px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.detail-btn:hover { background: #bae6fd; }

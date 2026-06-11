@@ -1,0 +1,68 @@
+.detail-actions { display: flex; justify-content: flex-start; margin-bottom: 18px; }
+.detail-back-link { max-width: 220px; }
+
+.detail-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 24px;
+}
+
+.detail-hero h2 { margin: 4px 0 10px; color: var(--navy); font-size: clamp(28px, 4vw, 42px); }
+.detail-hero p { margin: 0; color: var(--muted); }
+
+.risk-summary-card {
+  min-width: 230px;
+  padding: 22px;
+  border-radius: 22px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.risk-summary-card strong { font-size: 28px; color: var(--navy); }
+.risk-summary-card small { color: var(--muted); font-weight: 800; }
+
+.detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-bottom: 24px; }
+.detail-card { padding: 26px; }
+
+.detail-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-card-title svg { color: var(--blue); }
+.detail-card-title h3 { margin: 0; color: var(--navy); font-size: 21px; }
+
+.detail-list { display: grid; gap: 11px; }
+.detail-list p { margin: 0; color: var(--muted); line-height: 1.55; }
+.detail-list strong { color: var(--navy); }
+
+.risk-detail-panel { padding: 28px; }
+.risk-analysis-box { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: start; }
+.risk-analysis-box p { margin: 0 0 10px; color: var(--muted); line-height: 1.6; }
+.risk-analysis-box strong { color: var(--navy); }
+
+.detail-side-summary { display: flex; align-items: stretch; gap: 16px; }
+
+.admin-qr-card {
+  min-width: 170px;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 10px;
+}
+
+.admin-qr-card svg { background: #ffffff; border-radius: 14px; }
+.admin-qr-card span { color: var(--muted); font-size: 13px; font-weight: 900; }

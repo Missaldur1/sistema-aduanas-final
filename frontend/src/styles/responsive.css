@@ -1,0 +1,66 @@
+@media (max-width: 1080px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { position: fixed; inset: 0 auto 0 0; width: min(86vw, 320px); z-index: 20; transform: translateX(-100%); transition: transform .2s ease; }
+  .sidebar.sidebar-open { transform: translateX(0); }
+  .sidebar-close,
+  .mobile-menu-btn { display: grid; place-items: center; border: 0; }
+  .sidebar-close { margin-left: auto; background: rgba(255,255,255,.12); color: #fff; border-radius: 12px; width: 38px; height: 38px; }
+  .mobile-menu-btn { position: fixed; top: 14px; left: 14px; z-index: 15; width: 44px; height: 44px; border-radius: 14px; background: var(--navy); color: #fff; box-shadow: var(--shadow); }
+  .overlay { display: block; position: fixed; inset: 0; border: 0; background: rgba(0,0,0,.38); z-index: 19; }
+  .main-content { padding: 74px 16px 24px; }
+  .stats-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .content-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .checkbox-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+@media (max-width: 1024px) {
+  .public-register-page .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .public-register-header { align-items: flex-start; }
+}
+
+@media (max-width: 900px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-hero { flex-direction: column; align-items: stretch; }
+  .risk-summary-card { width: 100%; }
+  .risk-analysis-box { grid-template-columns: 1fr; }
+  .detail-side-summary { flex-direction: column; }
+  .admin-qr-card { width: 100%; }
+}
+
+@media (max-width: 720px) {
+  .login-screen { grid-template-columns: 1fr; padding: 14px; gap: 14px; }
+  .login-hero-panel { min-height: auto; border-radius: 24px; }
+  .login-card { border-radius: 24px; }
+  .login-logo-box { width: 140px; padding: 0; }
+
+  .topbar { align-items: flex-start; flex-direction: column; }
+  .quick-action { width: 100%; }
+
+  .stats-grid,
+  .form-grid,
+  .checkbox-grid { grid-template-columns: 1fr; }
+
+  .stat-card { padding: 16px; }
+  .panel-card { padding: 16px; border-radius: 20px; }
+  .desktop-table { display: none; }
+  .mobile-only-list { display: grid; }
+  .submit-btn { max-width: 100%; justify-self: stretch; }
+
+  .public-register-page { padding: 16px 12px 40px; }
+  .public-register-header { padding: 22px; border-radius: 22px; flex-direction: column; align-items: stretch; margin-bottom: 22px; }
+  .public-register-header h1 { font-size: 30px; }
+  .public-register-header p { font-size: 15px; }
+  .public-register-header .quick-action { width: 100%; }
+  .public-register-page .panel-card,
+  .public-register-page .form-section { padding: 22px; border-radius: 22px; }
+  .public-register-page .form-grid,
+  .public-register-page .checkbox-grid { grid-template-columns: 1fr; gap: 16px; }
+  .public-register-page .form-section-title h2 { font-size: 21px; }
+  .public-header-actions { flex-direction: column; width: 100%; }
+  .theme-toggle-btn,
+  .public-header-actions .quick-action { width: 100%; }
+
+  .qr-ticket-card { flex-direction: column; align-items: stretch; }
+  .qr-box { justify-content: center; }
+}
