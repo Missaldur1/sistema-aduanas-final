@@ -536,3 +536,19 @@
   }
 }
 
+.comprobante-only-page {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.volver-formulario-btn {
+  margin-top: 24px;
+  width: fit-content;
+  min-width: 220px;
+}
+
+@media (max-width: 700px) {
+  .volver-formulario-btn {
+    width: 100%;
+  }
+}

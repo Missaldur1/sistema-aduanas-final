@@ -173,10 +173,8 @@ function RegistroPaso({ publico = false }) {
 
     setCamposFaltantes((prev) => {
       const nuevosErrores = { ...prev };
-
       delete nuevosErrores["persona.nacionalidad"];
       delete nuevosErrores["persona.nacionalidad_otro"];
-
       return nuevosErrores;
     });
   };
@@ -194,7 +192,6 @@ function RegistroPaso({ publico = false }) {
 
     setCamposFaltantes((prev) => {
       const nuevosErrores = { ...prev };
-
       delete nuevosErrores["motivo_viaje"];
 
       if (valor !== "Otro") {
@@ -232,7 +229,6 @@ function RegistroPaso({ publico = false }) {
   };
 
   const formatearRut = (valor) => {
-    
     const rutLimpio = valor
       .replace(/[^0-9kK]/g, "")
       .toUpperCase()
@@ -244,12 +240,10 @@ function RegistroPaso({ publico = false }) {
 
     const cuerpo = rutLimpio.slice(0, -1);
     const dv = rutLimpio.slice(-1);
-
     const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
     return `${cuerpoFormateado}-${dv}`;
   };
-  
 
   const cambiarDocumento = (valor) => {
     const valorFinal =
@@ -555,6 +549,17 @@ function RegistroPaso({ publico = false }) {
     setForm(formularioInicial);
   };
 
+  const volverAlFormulario = () => {
+    setComprobante(null);
+    setMensaje(null);
+    setCamposFaltantes({});
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
+
   const enviar = async (e) => {
     e.preventDefault();
     setMensaje(null);
@@ -597,22 +602,24 @@ function RegistroPaso({ publico = false }) {
       });
 
       const codigo = response.data?.codigo_tramite;
+      const riesgo = response.data?.riesgo;
 
-      setMensaje({
-        tipo: "ok",
-        texto: `${
-          response.data?.mensaje || "Trámite registrado correctamente."
-        } Código de trámite: ${codigo}. Guarda este código para consultar con Aduanas.`
-      });
+      setMensaje(null);
 
       setComprobante({
         id: response.data?.id,
         codigo,
+        riesgo,
         fecha: new Date().toLocaleString("es-CL")
       });
 
       limpiarFormulario();
       setCamposFaltantes({});
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     } catch (error) {
       setMensaje({
         tipo: "error",
@@ -624,7 +631,43 @@ function RegistroPaso({ publico = false }) {
     }
   };
 
-  const contenidoFormulario = (
+  const comprobanteDigital = (
+    <section className="comprobante-only-page">
+      <section className="qr-ticket-card">
+        <div className="qr-ticket-info">
+          <p className="eyebrow">Comprobante digital</p>
+          <h3>{comprobante?.codigo}</h3>
+          <p>
+            Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.
+          </p>
+
+          <div className="qr-ticket-data">
+            <span>Fecha: {comprobante?.fecha}</span>
+            <span>Estado: En revisión aduanera</span>
+          </div>
+        </div>
+
+        <div className="qr-box">
+          <QRCodeSVG
+            value={comprobante?.codigo || ""}
+            size={150}
+            level="H"
+            includeMargin
+          />
+        </div>
+      </section>
+
+      <button
+        type="button"
+        className="primary-btn submit-btn volver-formulario-btn"
+        onClick={volverAlFormulario}
+      >
+        Volver al formulario
+      </button>
+    </section>
+  );
+
+  const formularioRegistro = (
     <form className="form-page" onSubmit={enviar} noValidate>
       <section className="panel-card form-section">
         <div className="form-section-title">
@@ -716,15 +759,9 @@ function RegistroPaso({ publico = false }) {
           <label>
             Fecha de nacimiento
             <DatePicker
-              selected={convertirFechaParaInput(
-                form.persona.fecha_nacimiento
-              )}
+              selected={convertirFechaParaInput(form.persona.fecha_nacimiento)}
               onChange={(fecha) =>
-                cambiar(
-                  "persona",
-                  "fecha_nacimiento",
-                  convertirFechaParaBD(fecha)
-                )
+                cambiar("persona", "fecha_nacimiento", convertirFechaParaBD(fecha))
               }
               dateFormat="dd/MM/yyyy"
               locale={es}
@@ -733,9 +770,7 @@ function RegistroPaso({ publico = false }) {
               showYearDropdown
               dropdownMode="select"
               maxDate={new Date()}
-              className={`date-picker-input ${marcarCampo(
-                "persona.fecha_nacimiento"
-              )}`}
+              className={`date-picker-input ${marcarCampo("persona.fecha_nacimiento")}`}
               calendarClassName="aduanas-calendar"
             />
             {mostrarError("persona.fecha_nacimiento")}
@@ -746,9 +781,7 @@ function RegistroPaso({ publico = false }) {
             <div className="phone-field">
               <select
                 value={form.persona.prefijo_telefono}
-                onChange={(e) =>
-                  cambiar("persona", "prefijo_telefono", e.target.value)
-                }
+                onChange={(e) => cambiar("persona", "prefijo_telefono", e.target.value)}
               >
                 {prefijosTelefonicos.map((item) => (
                   <option key={`${item.codigo}-${item.pais}`} value={item.codigo}>
@@ -806,9 +839,7 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("vehiculo.patente")}
               value={form.vehiculo.patente}
-              onChange={(e) =>
-                cambiar("vehiculo", "patente", e.target.value.toUpperCase())
-              }
+              onChange={(e) => cambiar("vehiculo", "patente", e.target.value.toUpperCase())}
               placeholder="Ej: AB1234"
             />
             {mostrarError("vehiculo.patente")}
@@ -819,9 +850,7 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("vehiculo.pais_origen")}
               value={form.vehiculo.pais_origen}
-              onChange={(e) =>
-                cambiar("vehiculo", "pais_origen", e.target.value)
-              }
+              onChange={(e) => cambiar("vehiculo", "pais_origen", e.target.value)}
               placeholder="Ej: Chile"
             />
             {mostrarError("vehiculo.pais_origen")}
@@ -928,9 +957,7 @@ function RegistroPaso({ publico = false }) {
                 type="text"
                 placeholder="Ej: visita familiar, estudio, trámite personal"
                 value={form.motivo_viaje_otro}
-                onChange={(e) =>
-                  cambiarSimple("motivo_viaje_otro", e.target.value)
-                }
+                onChange={(e) => cambiarSimple("motivo_viaje_otro", e.target.value)}
                 className={marcarCampo("motivo_viaje_otro")}
               />
               {mostrarError("motivo_viaje_otro")}
@@ -963,13 +990,7 @@ function RegistroPaso({ publico = false }) {
             <input
               type="checkbox"
               checked={form.declaracion.transporta_alimentos}
-              onChange={(e) =>
-                cambiar(
-                  "declaracion",
-                  "transporta_alimentos",
-                  e.target.checked
-                )
-              }
+              onChange={(e) => cambiar("declaracion", "transporta_alimentos", e.target.checked)}
             />
             Transporta alimentos
           </label>
@@ -978,13 +999,7 @@ function RegistroPaso({ publico = false }) {
             <input
               type="checkbox"
               checked={form.declaracion.transporta_vegetales}
-              onChange={(e) =>
-                cambiar(
-                  "declaracion",
-                  "transporta_vegetales",
-                  e.target.checked
-                )
-              }
+              onChange={(e) => cambiar("declaracion", "transporta_vegetales", e.target.checked)}
             />
             Transporta vegetales
           </label>
@@ -993,13 +1008,7 @@ function RegistroPaso({ publico = false }) {
             <input
               type="checkbox"
               checked={form.declaracion.transporta_animales}
-              onChange={(e) =>
-                cambiar(
-                  "declaracion",
-                  "transporta_animales",
-                  e.target.checked
-                )
-              }
+              onChange={(e) => cambiar("declaracion", "transporta_animales", e.target.checked)}
             />
             Transporta animales
           </label>
@@ -1008,13 +1017,7 @@ function RegistroPaso({ publico = false }) {
             <input
               type="checkbox"
               checked={form.declaracion.dinero_mayor_declarable}
-              onChange={(e) =>
-                cambiar(
-                  "declaracion",
-                  "dinero_mayor_declarable",
-                  e.target.checked
-                )
-              }
+              onChange={(e) => cambiar("declaracion", "dinero_mayor_declarable", e.target.checked)}
             />
             Dinero o valores declarables
           </label>
@@ -1024,49 +1027,16 @@ function RegistroPaso({ publico = false }) {
           className={marcarCampo("declaracion.observaciones")}
           placeholder="Observaciones adicionales"
           value={form.declaracion.observaciones}
-          onChange={(e) =>
-            cambiar("declaracion", "observaciones", e.target.value)
-          }
+          onChange={(e) => cambiar("declaracion", "observaciones", e.target.value)}
           maxLength={300}
         />
         {mostrarError("declaracion.observaciones")}
       </section>
 
       {mensaje && (
-        <div
-          className={`alert ${
-            mensaje.tipo === "ok" ? "alert-success" : "alert-error"
-          }`}
-        >
+        <div className={`alert ${mensaje.tipo === "ok" ? "alert-success" : "alert-error"}`}>
           {mensaje.texto}
         </div>
-      )}
-
-      {comprobante && (
-        <section className="qr-ticket-card">
-          <div className="qr-ticket-info">
-            <p className="eyebrow">Comprobante digital</p>
-            <h3>{comprobante.codigo}</h3>
-            <p>
-              Guarda este código. Aduana podrá usarlo para revisar tu trámite
-              registrado.
-            </p>
-
-            <div className="qr-ticket-data">
-              <span>Fecha: {comprobante.fecha}</span>
-              <span>Estado: En revisión aduanera</span>
-            </div>
-          </div>
-
-          <div className="qr-box">
-            <QRCodeSVG
-              value={comprobante.codigo}
-              size={150}
-              level="H"
-              includeMargin
-            />
-          </div>
-        </section>
       )}
 
       <button className="primary-btn submit-btn" disabled={cargando} type="submit">
@@ -1076,6 +1046,8 @@ function RegistroPaso({ publico = false }) {
     </form>
   );
 
+  const contenidoFormulario = comprobante ? comprobanteDigital : formularioRegistro;
+
   if (publico) {
     return (
       <main className={`public-register-page ${modoOscuro ? "dark-register" : ""}`}>
@@ -1084,8 +1056,8 @@ function RegistroPaso({ publico = false }) {
             <p className="eyebrow">Sistema Integrado de Gestión Aduanera</p>
             <h1>Registro de paso fronterizo</h1>
             <p>
-              Completa tus datos personales, información del vehículo y declaración
-              jurada para que Aduanas pueda revisar tu solicitud.
+              Completa tus datos personales, información del vehículo y declaración jurada
+              para que Aduanas pueda revisar tu solicitud.
             </p>
           </div>
 
@@ -1101,40 +1073,41 @@ function RegistroPaso({ publico = false }) {
           </div>
         </header>
 
-        <section className="testing-tools-card">
-          <div>
-            <p className="eyebrow">Herramientas de prueba</p>
-            <h2>Escenarios rápidos</h2>
-            <p>
-              Carga datos automáticamente para probar distintos casos de validación
-              aduanera.
-            </p>
-          </div>
+        {!comprobante && (
+          <section className="testing-tools-card">
+            <div>
+              <p className="eyebrow">Herramientas de prueba</p>
+              <h2>Escenarios rápidos</h2>
+              <p>
+                Carga datos automáticamente para probar distintos casos de validación aduanera.
+              </p>
+            </div>
 
-          <div className="testing-tools-actions">
-            <select
-              defaultValue=""
-              onChange={(e) => {
-                const escenario = escenariosPrueba.find(
-                  (item) => item.nombre === e.target.value
-                );
+            <div className="testing-tools-actions">
+              <select
+                defaultValue=""
+                onChange={(e) => {
+                  const escenario = escenariosPrueba.find(
+                    (item) => item.nombre === e.target.value
+                  );
 
-                cargarEscenario(escenario);
-                e.target.value = "";
-              }}
-            >
-              <option value="" disabled>
-                Seleccionar escenario
-              </option>
-
-              {escenariosPrueba.map((escenario) => (
-                <option key={escenario.nombre} value={escenario.nombre}>
-                  {escenario.nombre}
+                  cargarEscenario(escenario);
+                  e.target.value = "";
+                }}
+              >
+                <option value="" disabled>
+                  Seleccionar escenario
                 </option>
-              ))}
-            </select>
-          </div>
-        </section>
+
+                {escenariosPrueba.map((escenario) => (
+                  <option key={escenario.nombre} value={escenario.nombre}>
+                    {escenario.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </section>
+        )}
 
         {contenidoFormulario}
       </main>
