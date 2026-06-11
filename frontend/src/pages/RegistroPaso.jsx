@@ -16,14 +16,8 @@ function RegistroPaso({ publico = false }) {
   }, [publico]);
 
   const [modoOscuro, setModoOscuro] = useState(() => {
-      return localStorage.getItem("modoRegistro") === "oscuro";
+    return localStorage.getItem("modoRegistro") === "oscuro";
   });
-
-  const cambiarModo = () => {
-    const nuevoModo = !modoOscuro;
-    setModoOscuro(nuevoModo);
-    localStorage.setItem("modoRegistro", nuevoModo ? "oscuro" : "claro");
-  };
 
   const [form, setForm] = useState({
     persona: {
@@ -65,103 +59,127 @@ function RegistroPaso({ publico = false }) {
   const [comprobante, setComprobante] = useState(null);
   const [camposFaltantes, setCamposFaltantes] = useState({});
 
+  const cambiarModo = () => {
+    const nuevoModo = !modoOscuro;
+    setModoOscuro(nuevoModo);
+    localStorage.setItem("modoRegistro", nuevoModo ? "oscuro" : "claro");
+  };
+
   const cambiar = (seccion, campo, valor) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [seccion]: {
-        ...form[seccion],
+        ...prev[seccion],
         [campo]: valor
       }
+    }));
+  };
+
+  const cambiarSimple = (campo, valor) => {
+    setForm((prev) => ({
+      ...prev,
+      [campo]: valor
+    }));
+  };
+
+  const cambiarMotivoViaje = (valor) => {
+    setForm((prev) => ({
+      ...prev,
+      motivo_viaje: valor,
+      motivo_viaje_otro: valor === "Otro" ? prev.motivo_viaje_otro : ""
+    }));
+
+    setCamposFaltantes((prev) => {
+      const nuevosErrores = { ...prev };
+
+      if (valor !== "Otro") {
+        delete nuevosErrores["motivo_viaje_otro"];
+      }
+
+      return nuevosErrores;
     });
   };
 
   const marcarCampo = (ruta) => {
-  return camposFaltantes[ruta] ? "input-error" : "";
-};
+    return camposFaltantes[ruta] ? "input-error" : "";
+  };
 
-const validarFormulario = () => {
-  const errores = {};
+  const validarFormulario = () => {
+    const errores = {};
 
-  if (!form.persona.nombre.trim()) {
-    errores["persona.nombre"] = "El nombre es obligatorio.";
-  }
+    if (!form.persona.nombre.trim()) {
+      errores["persona.nombre"] = "El nombre es obligatorio.";
+    }
 
-  if (!form.persona.apellido.trim()) {
-    errores["persona.apellido"] = "El apellido es obligatorio.";
-  }
+    if (!form.persona.apellido.trim()) {
+      errores["persona.apellido"] = "El apellido es obligatorio.";
+    }
 
-  if (!form.persona.documento_numero.trim()) {
-    errores["persona.documento_numero"] = "El número de documento es obligatorio.";
-  }
+    if (!form.persona.documento_numero.trim()) {
+      errores["persona.documento_numero"] = "El número de documento es obligatorio.";
+    }
 
-  if (!form.persona.nacionalidad.trim()) {
-    errores["persona.nacionalidad"] = "La nacionalidad es obligatoria.";
-  }
+    if (!form.persona.nacionalidad.trim()) {
+      errores["persona.nacionalidad"] = "La nacionalidad es obligatoria.";
+    }
 
-  if (!form.persona.fecha_nacimiento) {
-    errores["persona.fecha_nacimiento"] = "La fecha de nacimiento es obligatoria.";
-  }
+    if (!form.persona.fecha_nacimiento) {
+      errores["persona.fecha_nacimiento"] = "La fecha de nacimiento es obligatoria.";
+    }
 
-  if (!form.vehiculo.patente.trim()) {
-    errores["vehiculo.patente"] = "La patente es obligatoria.";
-  }
+    if (!form.vehiculo.patente.trim()) {
+      errores["vehiculo.patente"] = "La patente es obligatoria.";
+    }
 
-  if (!form.vehiculo.pais_origen.trim()) {
-    errores["vehiculo.pais_origen"] = "El país de origen es obligatorio.";
-  }
+    if (!form.vehiculo.pais_origen.trim()) {
+      errores["vehiculo.pais_origen"] = "El país de origen es obligatorio.";
+    }
 
-  if (!form.vehiculo.marca.trim()) {
-    errores["vehiculo.marca"] = "La marca es obligatoria.";
-  }
+    if (!form.vehiculo.marca.trim()) {
+      errores["vehiculo.marca"] = "La marca es obligatoria.";
+    }
 
-  if (!form.vehiculo.modelo.trim()) {
-    errores["vehiculo.modelo"] = "El modelo es obligatorio.";
-  }
+    if (!form.vehiculo.modelo.trim()) {
+      errores["vehiculo.modelo"] = "El modelo es obligatorio.";
+    }
 
-  if (form.motivo_viaje === "Otro" && !form.motivo_viaje_otro.trim()) {
-    errores["motivo_viaje_otro"] = "Debes especificar el motivo del viaje.";
-  }
+    if (form.motivo_viaje === "Otro" && !form.motivo_viaje_otro.trim()) {
+      errores["motivo_viaje_otro"] = "Debes especificar el motivo del viaje.";
+    }
 
-  if (!form.destino.trim()) {
-    errores["destino"] = "El destino es obligatorio.";
-  }
+    if (!form.destino.trim()) {
+      errores["destino"] = "El destino es obligatorio.";
+    }
 
-  setCamposFaltantes(errores);
+    setCamposFaltantes(errores);
 
-  if (Object.keys(errores).length > 0) {
-    setMensaje({
-      tipo: "error",
-      texto: "Faltan datos obligatorios. Revisa los campos marcados en rojo."
-    });
+    if (Object.keys(errores).length > 0) {
+      setMensaje({
+        tipo: "error",
+        texto: "Faltan datos obligatorios. Revisa los campos marcados en rojo."
+      });
 
-    return false;
-  }
+      return false;
+    }
 
-  return true;
-};
+    return true;
+  };
 
-const convertirFechaParaInput = (fechaTexto) => {
-  if (!fechaTexto) return null;
+  const convertirFechaParaInput = (fechaTexto) => {
+    if (!fechaTexto) return null;
 
-  const [anio, mes, dia] = fechaTexto.split("-");
-  return new Date(Number(anio), Number(mes) - 1, Number(dia));
-};
+    const [anio, mes, dia] = fechaTexto.split("-");
+    return new Date(Number(anio), Number(mes) - 1, Number(dia));
+  };
 
-const convertirFechaParaBD = (fecha) => {
-  if (!fecha) return "";
+  const convertirFechaParaBD = (fecha) => {
+    if (!fecha) return "";
 
-  const anio = fecha.getFullYear();
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const dia = String(fecha.getDate()).padStart(2, "0");
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+    const dia = String(fecha.getDate()).padStart(2, "0");
 
-  return `${anio}-${mes}-${dia}`;
-};
-
-  const cambiarSimple = (campo, valor) => {
-    setForm({
-      ...form,
-      [campo]: valor
-    });
+    return `${anio}-${mes}-${dia}`;
   };
 
   const cargarEscenario = (escenario) => {
@@ -169,6 +187,7 @@ const convertirFechaParaBD = (fecha) => {
 
     setForm({
       ...escenario.data,
+      motivo_viaje_otro: escenario.data.motivo_viaje_otro || "",
       frontera: "Complejo Los Libertadores"
     });
 
@@ -181,28 +200,41 @@ const convertirFechaParaBD = (fecha) => {
     });
   };
 
-  const limpiarRegistrosBD = async () => {
-    const confirmar = window.confirm(
-      "Esto eliminará personas, vehículos, trámites, declaraciones, alertas y validaciones. El usuario admin se mantiene. ¿Deseas continuar?"
-    );
-
-    if (!confirmar) return;
-
-    try {
-      await api.delete("/dev/limpiar-registros");
-
-      setMensaje({
-        tipo: "ok",
-        texto: "Registros eliminados correctamente de la base de datos."
-      });
-
-      setComprobante(null);
-    } catch (error) {
-      setMensaje({
-        tipo: "error",
-        texto: error.response?.data?.mensaje || "No se pudieron eliminar los registros."
-      });
-    }
+  const limpiarFormulario = () => {
+    setForm({
+      persona: {
+        nombre: "",
+        apellido: "",
+        documento_tipo: "RUT",
+        documento_numero: "",
+        nacionalidad: "",
+        fecha_nacimiento: "",
+        telefono: "",
+        email: ""
+      },
+      vehiculo: {
+        tipo: "Particular",
+        patente: "",
+        pais_origen: "",
+        marca: "",
+        modelo: "",
+        anio: "",
+        color: "",
+        chasis: "",
+        motor: ""
+      },
+      declaracion: {
+        transporta_alimentos: false,
+        transporta_vegetales: false,
+        transporta_animales: false,
+        dinero_mayor_declarable: false,
+        observaciones: ""
+      },
+      motivo_viaje: "Turismo",
+      motivo_viaje_otro: "",
+      destino: "",
+      frontera: "Complejo Los Libertadores"
+    });
   };
 
   const enviar = async (e) => {
@@ -234,7 +266,9 @@ const convertirFechaParaBD = (fecha) => {
 
       setMensaje({
         tipo: "ok",
-        texto: `${response.data?.mensaje || "Trámite registrado correctamente."} Código de trámite: ${codigo}. Guarda este código para consultar con Aduanas.`
+        texto: `${
+          response.data?.mensaje || "Trámite registrado correctamente."
+        } Código de trámite: ${codigo}. Guarda este código para consultar con Aduanas.`
       });
 
       setComprobante({
@@ -243,41 +277,8 @@ const convertirFechaParaBD = (fecha) => {
         fecha: new Date().toLocaleString("es-CL")
       });
 
-
-      setForm({
-        persona: {
-          nombre: "",
-          apellido: "",
-          documento_tipo: "RUT",
-          documento_numero: "",
-          nacionalidad: "",
-          fecha_nacimiento: "",
-          telefono: "",
-          email: ""
-        },
-        vehiculo: {
-          tipo: "Particular",
-          patente: "",
-          pais_origen: "",
-          marca: "",
-          modelo: "",
-          anio: "",
-          color: "",
-          chasis: "",
-          motor: ""
-        },
-        declaracion: {
-          transporta_alimentos: false,
-          transporta_vegetales: false,
-          transporta_animales: false,
-          dinero_mayor_declarable: false,
-          observaciones: ""
-        },
-        motivo_viaje: "Turismo",
-        motivo_viaje_otro: "",
-        destino: "",
-        frontera: "Complejo Los Libertadores"
-      });
+      limpiarFormulario();
+      setCamposFaltantes({});
     } catch (error) {
       setMensaje({
         tipo: "error",
@@ -387,7 +388,6 @@ const convertirFechaParaBD = (fecha) => {
             />
           </label>
         </div>
-
       </section>
 
       <section className="panel-card form-section">
@@ -489,7 +489,6 @@ const convertirFechaParaBD = (fecha) => {
             />
           </label>
         </div>
-
       </section>
 
       <section className="panel-card form-section">
@@ -503,22 +502,16 @@ const convertirFechaParaBD = (fecha) => {
             Motivo del viaje
             <select
               value={form.motivo_viaje}
-              onChange={(e) => {
-                cambiarSimple("motivo_viaje", e.target.value);
-              
-                if (e.target.value !== "Otro") {
-                  cambiarSimple("motivo_viaje_otro", "");
-                }
-              }}
+              onChange={(e) => cambiarMotivoViaje(e.target.value)}
             >
-              <option>Turismo</option>
-              <option>Trabajo</option>
-              <option>Comercio</option>
-              <option>Residencia</option>
-              <option>Otro</option>
+              <option value="Turismo">Turismo</option>
+              <option value="Trabajo">Trabajo</option>
+              <option value="Comercio">Comercio</option>
+              <option value="Residencia">Residencia</option>
+              <option value="Otro">Otro</option>
             </select>
           </label>
-            
+
           {form.motivo_viaje === "Otro" && (
             <label className="otro-motivo-field">
               Especifique el motivo del viaje
@@ -529,6 +522,7 @@ const convertirFechaParaBD = (fecha) => {
                 onChange={(e) => cambiarSimple("motivo_viaje_otro", e.target.value)}
                 className={marcarCampo("motivo_viaje_otro")}
               />
+
               {camposFaltantes["motivo_viaje_otro"] && (
                 <small className="campo-error">
                   {camposFaltantes["motivo_viaje_otro"]}
@@ -562,7 +556,9 @@ const convertirFechaParaBD = (fecha) => {
             <input
               type="checkbox"
               checked={form.declaracion.transporta_alimentos}
-              onChange={(e) => cambiar("declaracion", "transporta_alimentos", e.target.checked)}
+              onChange={(e) =>
+                cambiar("declaracion", "transporta_alimentos", e.target.checked)
+              }
             />
             Transporta alimentos
           </label>
@@ -571,7 +567,9 @@ const convertirFechaParaBD = (fecha) => {
             <input
               type="checkbox"
               checked={form.declaracion.transporta_vegetales}
-              onChange={(e) => cambiar("declaracion", "transporta_vegetales", e.target.checked)}
+              onChange={(e) =>
+                cambiar("declaracion", "transporta_vegetales", e.target.checked)
+              }
             />
             Transporta vegetales
           </label>
@@ -580,7 +578,9 @@ const convertirFechaParaBD = (fecha) => {
             <input
               type="checkbox"
               checked={form.declaracion.transporta_animales}
-              onChange={(e) => cambiar("declaracion", "transporta_animales", e.target.checked)}
+              onChange={(e) =>
+                cambiar("declaracion", "transporta_animales", e.target.checked)
+              }
             />
             Transporta animales
           </label>
@@ -589,7 +589,9 @@ const convertirFechaParaBD = (fecha) => {
             <input
               type="checkbox"
               checked={form.declaracion.dinero_mayor_declarable}
-              onChange={(e) => cambiar("declaracion", "dinero_mayor_declarable", e.target.checked)}
+              onChange={(e) =>
+                cambiar("declaracion", "dinero_mayor_declarable", e.target.checked)
+              }
             />
             Dinero o valores declarables
           </label>
@@ -616,13 +618,13 @@ const convertirFechaParaBD = (fecha) => {
             <p>
               Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.
             </p>
-            
+
             <div className="qr-ticket-data">
               <span>Fecha: {comprobante.fecha}</span>
               <span>Estado: En revisión aduanera</span>
             </div>
           </div>
-            
+
           <div className="qr-box">
             <QRCodeSVG
               value={comprobante.codigo}
@@ -649,22 +651,22 @@ const convertirFechaParaBD = (fecha) => {
             <p className="eyebrow">Sistema Integrado de Gestión Aduanera</p>
             <h1>Registro de paso fronterizo</h1>
             <p>
-              Completa tus datos personales, información del vehículo y declaración
-              jurada para que Aduanas pueda revisar tu solicitud.
+              Completa tus datos personales, información del vehículo y declaración jurada
+              para que Aduanas pueda revisar tu solicitud.
             </p>
           </div>
 
-<div className="public-header-actions">
-  <button type="button" className="theme-toggle-btn" onClick={cambiarModo}>
-    {modoOscuro ? <Sun size={14} /> : <Moon size={14} />}
-    {modoOscuro ? "Modo claro" : "Modo oscuro"}
-  </button>
+          <div className="public-header-actions">
+            <button type="button" className="theme-toggle-btn" onClick={cambiarModo}>
+              {modoOscuro ? <Sun size={14} /> : <Moon size={14} />}
+              {modoOscuro ? "Modo claro" : "Modo oscuro"}
+            </button>
 
-  <a className="quick-action" href="/admin">
-    Ingreso Aduana
-  </a>
-</div>
-                </header>
+            <a className="quick-action" href="/admin">
+              Ingreso Aduana
+            </a>
+          </div>
+        </header>
 
         <section className="testing-tools-card">
           <div>
@@ -697,7 +699,6 @@ const convertirFechaParaBD = (fecha) => {
                 </option>
               ))}
             </select>
-
           </div>
         </section>
 
