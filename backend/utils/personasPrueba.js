@@ -1,24 +1,24 @@
 const personasPrueba = [
   {
-    documento: "12345678-9",
+    documento: "12.345.678-9",
     nombre: "Carlos Soto",
     tiene_antecedentes: true,
     detalle: "Registra antecedente penal simulado por orden de revisión PDI."
   },
   {
-    documento: "11111111-1",
+    documento: "11.111.111-1",
     nombre: "Pedro Morales",
     tiene_antecedentes: true,
     detalle: "Persona con restricción simulada para salir del país."
   },
   {
-    documento: "22222222-2",
+    documento: "22.222.222-2",
     nombre: "Ana Torres",
     tiene_antecedentes: false,
     detalle: ""
   },
   {
-    documento: "33333333-3",
+    documento: "33.333.333-3",
     nombre: "María González",
     tiene_antecedentes: false,
     detalle: ""
