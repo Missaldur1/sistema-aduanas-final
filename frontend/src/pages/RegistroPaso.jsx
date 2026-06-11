@@ -68,7 +68,8 @@ function RegistroPaso({ publico = false }) {
       apellido: "",
       documento_tipo: "RUT",
       documento_numero: "",
-      nacionalidad: "",
+      nacionalidad: "Chilena",
+      nacionalidad_otro: "",
       fecha_nacimiento: "",
       prefijo_telefono: "+56",
       telefono: "",
@@ -158,6 +159,30 @@ function RegistroPaso({ publico = false }) {
       delete nuevosErrores["persona.documento_numero"];
       return nuevosErrores;
     });
+  };
+
+  const cambiarNacionalidad = (valor) => {
+    setForm((prev) => ({
+      ...prev,
+      persona: {
+        ...prev.persona,
+        nacionalidad: valor,
+        nacionalidad_otro: valor === "Otra" ? prev.persona.nacionalidad_otro : ""
+      }
+    }));
+
+    setCamposFaltantes((prev) => {
+      const nuevosErrores = { ...prev };
+
+      delete nuevosErrores["persona.nacionalidad"];
+      delete nuevosErrores["persona.nacionalidad_otro"];
+
+      return nuevosErrores;
+    });
+  };
+
+  const limpiarTextoSoloLetras = (texto) => {
+    return texto.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, "");
   };
 
   const cambiarMotivoViaje = (valor) => {
@@ -300,6 +325,7 @@ function RegistroPaso({ publico = false }) {
     const apellido = form.persona.apellido.trim();
     const documento = form.persona.documento_numero.trim();
     const nacionalidad = form.persona.nacionalidad.trim();
+    const nacionalidadOtro = form.persona.nacionalidad_otro.trim();
     const telefono = form.persona.telefono.trim();
     const email = form.persona.email.trim();
 
@@ -346,9 +372,16 @@ function RegistroPaso({ publico = false }) {
 
     if (!nacionalidad) {
       errores["persona.nacionalidad"] = "La nacionalidad es obligatoria.";
-    } else if (nacionalidad.length < 3) {
-      errores["persona.nacionalidad"] =
-        "La nacionalidad debe tener al menos 3 caracteres.";
+    } else if (nacionalidad === "Otra") {
+      if (!nacionalidadOtro) {
+        errores["persona.nacionalidad_otro"] = "Debes indicar la nacionalidad.";
+      } else if (nacionalidadOtro.length < 3) {
+        errores["persona.nacionalidad_otro"] =
+          "La nacionalidad debe tener al menos 3 caracteres.";
+      } else if (!soloLetras(nacionalidadOtro)) {
+        errores["persona.nacionalidad_otro"] =
+          "La nacionalidad no debe contener números ni caracteres especiales.";
+      }
     } else if (!soloLetras(nacionalidad)) {
       errores["persona.nacionalidad"] =
         "La nacionalidad solo debe contener letras.";
@@ -474,6 +507,7 @@ function RegistroPaso({ publico = false }) {
       ...escenario.data,
       persona: {
         ...escenario.data.persona,
+        nacionalidad_otro: "",
         prefijo_telefono: telefonoEscenario.prefijo_telefono,
         telefono: telefonoEscenario.telefono
       },
@@ -513,7 +547,12 @@ function RegistroPaso({ publico = false }) {
           ? `Otro: ${form.motivo_viaje_otro.trim()}`
           : form.motivo_viaje;
 
-      const { prefijo_telefono, ...personaSinPrefijo } = form.persona;
+      const nacionalidadFinal =
+        form.persona.nacionalidad === "Otra"
+          ? form.persona.nacionalidad_otro.trim()
+          : form.persona.nacionalidad;
+
+      const { prefijo_telefono, nacionalidad_otro, ...personaSinPrefijo } = form.persona;
 
       const telefonoFinal = form.persona.telefono.trim()
         ? `${form.persona.prefijo_telefono} ${form.persona.telefono.trim()}`
@@ -523,6 +562,7 @@ function RegistroPaso({ publico = false }) {
         ...form,
         persona: {
           ...personaSinPrefijo,
+          nacionalidad: nacionalidadFinal,
           telefono: telefonoFinal
         },
         motivo_viaje: motivoViajeFinal,
@@ -615,24 +655,38 @@ function RegistroPaso({ publico = false }) {
 
           <label>
             Nacionalidad
-            <input
-              list="lista-nacionalidades"
+            <select
               className={marcarCampo("persona.nacionalidad")}
               value={form.persona.nacionalidad}
-              onChange={(e) =>
-                cambiar("persona", "nacionalidad", e.target.value)
-              }
-              placeholder="Buscar nacionalidad"
-            />
-
-            <datalist id="lista-nacionalidades">
+              onChange={(e) => cambiarNacionalidad(e.target.value)}
+            >
               {nacionalidades.map((nacionalidad) => (
-                <option key={nacionalidad} value={nacionalidad} />
+                <option key={nacionalidad} value={nacionalidad}>
+                  {nacionalidad}
+                </option>
               ))}
-            </datalist>
-
+            </select>
             {mostrarError("persona.nacionalidad")}
           </label>
+
+          {form.persona.nacionalidad === "Otra" && (
+            <label className="otro-motivo-field">
+              Indique su nacionalidad
+              <input
+                className={marcarCampo("persona.nacionalidad_otro")}
+                value={form.persona.nacionalidad_otro}
+                onChange={(e) =>
+                  cambiar(
+                    "persona",
+                    "nacionalidad_otro",
+                    limpiarTextoSoloLetras(e.target.value)
+                  )
+                }
+                placeholder="Ej: Cubana, Hondureña, Panameña"
+              />
+              {mostrarError("persona.nacionalidad_otro")}
+            </label>
+          )}
 
           <label>
             Fecha de nacimiento
