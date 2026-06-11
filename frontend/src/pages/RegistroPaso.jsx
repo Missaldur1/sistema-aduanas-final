@@ -628,46 +628,49 @@ const convertirFechaParaBD = (fecha) => {
     Ingreso Aduana
   </a>
 </div>
-        </header>
+                </header>
 
-{import.meta.env.DEV && (
-  <section className="testing-tools-card">
-    <div>
-      <p className="eyebrow">Herramientas de prueba</p>
-      <h2>Escenarios rápidos</h2>
-      <p>
-        Carga datos automáticamente para probar distintos casos de validación aduanera.
-      </p>
-    </div>
+        <section className="testing-tools-card">
+          <div>
+            <p className="eyebrow">Herramientas de prueba</p>
+            <h2>Escenarios rápidos</h2>
+            <p>
+              Carga datos automáticamente para probar distintos casos de validación aduanera.
+            </p>
+          </div>
 
-    <div className="testing-tools-actions">
-      <select
-        defaultValue=""
-        onChange={(e) => {
-          const escenario = escenariosPrueba.find(
-            (item) => item.nombre === e.target.value
-          );
-          cargarEscenario(escenario);
-          e.target.value = "";
-        }}
-      >
-        <option value="" disabled>
-          Seleccionar escenario
-        </option>
+          <div className="testing-tools-actions">
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const escenario = escenariosPrueba.find(
+                  (item) => item.nombre === e.target.value
+                );
 
-        {escenariosPrueba.map((escenario) => (
-          <option key={escenario.nombre} value={escenario.nombre}>
-            {escenario.nombre}
-          </option>
-        ))}
-      </select>
+                cargarEscenario(escenario);
+                e.target.value = "";
+              }}
+            >
+              <option value="" disabled>
+                Seleccionar escenario
+              </option>
 
-      <button type="button" className="danger-action" onClick={limpiarRegistrosBD}>
-        Eliminar registros BD
-      </button>
-    </div>
-  </section>
-)}        
+              {escenariosPrueba.map((escenario) => (
+                <option key={escenario.nombre} value={escenario.nombre}>
+                  {escenario.nombre}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              className="danger-action"
+              onClick={limpiarRegistrosBD}
+            >
+              Eliminar registros BD
+            </button>
+          </div>
+        </section>
 
         {contenidoFormulario}
       </main>
