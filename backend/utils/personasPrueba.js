@@ -1,6 +1,6 @@
 const personasPrueba = [
   {
-    documento: "12.345.678-9",
+    documento: "12.345.678-5",
     nombre: "Carlos Soto",
     tiene_antecedentes: true,
     detalle: "Registra antecedente penal simulado por orden de revisión PDI."

@@ -40,7 +40,7 @@ function RegistroVehiculo() {
     motor: "2AR456789",
     conductor_nombre: "Juan Pérez González",
     conductor_nacionalidad: "Chilena",
-    conductor_documento: "12.345.678-9",
+    conductor_documento: "12.345.678-5",
     documento_tipo: "Permiso de Circulación",
     documento_numero: "123456789",
     vencimiento: "2024-12-31",

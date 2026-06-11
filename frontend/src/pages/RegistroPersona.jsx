@@ -110,7 +110,7 @@ function RegistroPersona() {
                 name="documento"
                 value={form.documento}
                 onChange={cambiarDato}
-                placeholder="Ej: 12.345.678-9"
+                placeholder="Ej: 12.345.678-5"
               />
             </div>
           </label>

@@ -42,7 +42,7 @@ export const escenariosPrueba = [
         nombre: "Carlos",
         apellido: "Soto",
         documento_tipo: "RUT",
-        documento_numero: "12.345.678-9",
+        documento_numero: "12.345.678-5",
         nacionalidad: "Chilena",
         fecha_nacimiento: "1988-09-20",
         telefono: "+56 9 1234 5678",
