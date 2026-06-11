@@ -8,6 +8,53 @@ import { es } from "date-fns/locale/es";
 import "react-datepicker/dist/react-datepicker.css";
 import { escenariosPrueba } from "../utils/escenariosPrueba";
 
+const nacionalidades = [
+  "Chilena",
+  "Argentina",
+  "Boliviana",
+  "Brasileña",
+  "Colombiana",
+  "Ecuatoriana",
+  "Paraguaya",
+  "Peruana",
+  "Uruguaya",
+  "Venezolana",
+  "Mexicana",
+  "Española",
+  "Estadounidense",
+  "Canadiense",
+  "Francesa",
+  "Alemana",
+  "Italiana",
+  "China",
+  "Japonesa",
+  "Coreana",
+  "Otra"
+];
+
+const prefijosTelefonicos = [
+  { codigo: "+56", pais: "Chile" },
+  { codigo: "+54", pais: "Argentina" },
+  { codigo: "+591", pais: "Bolivia" },
+  { codigo: "+55", pais: "Brasil" },
+  { codigo: "+57", pais: "Colombia" },
+  { codigo: "+593", pais: "Ecuador" },
+  { codigo: "+595", pais: "Paraguay" },
+  { codigo: "+51", pais: "Perú" },
+  { codigo: "+598", pais: "Uruguay" },
+  { codigo: "+58", pais: "Venezuela" },
+  { codigo: "+52", pais: "México" },
+  { codigo: "+1", pais: "Estados Unidos / Canadá" },
+  { codigo: "+34", pais: "España" }
+];
+
+const obtenerPlaceholderDocumento = (tipoDocumento) => {
+  if (tipoDocumento === "RUT") return "Ej: 12.345.678-5";
+  if (tipoDocumento === "Pasaporte") return "Ej: PA1234567";
+  if (tipoDocumento === "DNI") return "Ej: 12345678";
+  return "Ingrese número de documento";
+};
+
 function RegistroPaso({ publico = false }) {
   useEffect(() => {
     if (publico) {
@@ -23,6 +70,7 @@ function RegistroPaso({ publico = false }) {
       documento_numero: "",
       nacionalidad: "",
       fecha_nacimiento: "",
+      prefijo_telefono: "+56",
       telefono: "",
       email: ""
     },
@@ -95,6 +143,23 @@ function RegistroPaso({ publico = false }) {
     quitarError(campo);
   };
 
+  const cambiarTipoDocumento = (valor) => {
+    setForm((prev) => ({
+      ...prev,
+      persona: {
+        ...prev.persona,
+        documento_tipo: valor,
+        documento_numero: ""
+      }
+    }));
+
+    setCamposFaltantes((prev) => {
+      const nuevosErrores = { ...prev };
+      delete nuevosErrores["persona.documento_numero"];
+      return nuevosErrores;
+    });
+  };
+
   const cambiarMotivoViaje = (valor) => {
     setForm((prev) => ({
       ...prev,
@@ -134,7 +199,7 @@ function RegistroPaso({ publico = false }) {
   };
 
   const validarTelefono = (telefono) => {
-    return /^\+?[0-9\s-]{8,18}$/.test(telefono);
+    return /^[0-9\s-]{6,15}$/.test(telefono);
   };
 
   const limpiarRut = (rut) => {
@@ -208,6 +273,26 @@ function RegistroPaso({ publico = false }) {
     return null;
   };
 
+  const separarTelefonoEscenario = (telefono = "") => {
+    const telefonoLimpio = telefono.trim();
+
+    const prefijoEncontrado = prefijosTelefonicos.find((item) =>
+      telefonoLimpio.startsWith(item.codigo)
+    );
+
+    if (!prefijoEncontrado) {
+      return {
+        prefijo_telefono: "+56",
+        telefono: telefonoLimpio
+      };
+    }
+
+    return {
+      prefijo_telefono: prefijoEncontrado.codigo,
+      telefono: telefonoLimpio.replace(prefijoEncontrado.codigo, "").trim()
+    };
+  };
+
   const validarFormulario = () => {
     const errores = {};
 
@@ -277,7 +362,7 @@ function RegistroPaso({ publico = false }) {
 
     if (telefono && !validarTelefono(telefono)) {
       errores["persona.telefono"] =
-        "Ingresa un teléfono válido. Ej: +56 9 1234 5678.";
+        "Ingresa un número válido. Ej: 9 1234 5678.";
     }
 
     if (email && !validarEmail(email)) {
@@ -309,8 +394,6 @@ function RegistroPaso({ publico = false }) {
 
     if (!modelo) {
       errores["vehiculo.modelo"] = "El modelo es obligatorio.";
-    } else if (modelo.length < 1) {
-      errores["vehiculo.modelo"] = "El modelo no puede estar vacío.";
     }
 
     if (anio) {
@@ -383,8 +466,17 @@ function RegistroPaso({ publico = false }) {
   const cargarEscenario = (escenario) => {
     if (!escenario) return;
 
+    const telefonoEscenario = separarTelefonoEscenario(
+      escenario.data.persona?.telefono || ""
+    );
+
     setForm({
       ...escenario.data,
+      persona: {
+        ...escenario.data.persona,
+        prefijo_telefono: telefonoEscenario.prefijo_telefono,
+        telefono: telefonoEscenario.telefono
+      },
       motivo_viaje_otro: escenario.data.motivo_viaje_otro || "",
       frontera: "Complejo Los Libertadores"
     });
@@ -421,8 +513,18 @@ function RegistroPaso({ publico = false }) {
           ? `Otro: ${form.motivo_viaje_otro.trim()}`
           : form.motivo_viaje;
 
+      const { prefijo_telefono, ...personaSinPrefijo } = form.persona;
+
+      const telefonoFinal = form.persona.telefono.trim()
+        ? `${form.persona.prefijo_telefono} ${form.persona.telefono.trim()}`
+        : "";
+
       const response = await api.post("/tramites", {
         ...form,
+        persona: {
+          ...personaSinPrefijo,
+          telefono: telefonoFinal
+        },
         motivo_viaje: motivoViajeFinal,
         frontera: "Complejo Los Libertadores"
       });
@@ -490,9 +592,7 @@ function RegistroPaso({ publico = false }) {
             Tipo de documento
             <select
               value={form.persona.documento_tipo}
-              onChange={(e) =>
-                cambiar("persona", "documento_tipo", e.target.value)
-              }
+              onChange={(e) => cambiarTipoDocumento(e.target.value)}
             >
               <option value="RUT">RUT</option>
               <option value="Pasaporte">Pasaporte</option>
@@ -508,7 +608,7 @@ function RegistroPaso({ publico = false }) {
               onChange={(e) =>
                 cambiar("persona", "documento_numero", e.target.value)
               }
-              placeholder="Ej: 12.345.678-5"
+              placeholder={obtenerPlaceholderDocumento(form.persona.documento_tipo)}
             />
             {mostrarError("persona.documento_numero")}
           </label>
@@ -516,13 +616,21 @@ function RegistroPaso({ publico = false }) {
           <label>
             Nacionalidad
             <input
+              list="lista-nacionalidades"
               className={marcarCampo("persona.nacionalidad")}
               value={form.persona.nacionalidad}
               onChange={(e) =>
                 cambiar("persona", "nacionalidad", e.target.value)
               }
-              placeholder="Ej: Chilena"
+              placeholder="Buscar nacionalidad"
             />
+
+            <datalist id="lista-nacionalidades">
+              {nacionalidades.map((nacionalidad) => (
+                <option key={nacionalidad} value={nacionalidad} />
+              ))}
+            </datalist>
+
             {mostrarError("persona.nacionalidad")}
           </label>
 
@@ -556,12 +664,27 @@ function RegistroPaso({ publico = false }) {
 
           <label>
             Teléfono
-            <input
-              className={marcarCampo("persona.telefono")}
-              value={form.persona.telefono}
-              onChange={(e) => cambiar("persona", "telefono", e.target.value)}
-              placeholder="Ej: +56 9 1234 5678"
-            />
+            <div className="phone-field">
+              <select
+                value={form.persona.prefijo_telefono}
+                onChange={(e) =>
+                  cambiar("persona", "prefijo_telefono", e.target.value)
+                }
+              >
+                {prefijosTelefonicos.map((item) => (
+                  <option key={`${item.codigo}-${item.pais}`} value={item.codigo}>
+                    {item.codigo} · {item.pais}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                className={marcarCampo("persona.telefono")}
+                value={form.persona.telefono}
+                onChange={(e) => cambiar("persona", "telefono", e.target.value)}
+                placeholder="Ej: 9 1234 5678"
+              />
+            </div>
             {mostrarError("persona.telefono")}
           </label>
 
