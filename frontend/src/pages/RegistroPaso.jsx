@@ -55,6 +55,7 @@ function RegistroPaso({ publico = false }) {
       observaciones: ""
     },
     motivo_viaje: "Turismo",
+    motivo_viaje_otro: "",
     destino: "",
     frontera: "Complejo Los Libertadores"
   });
@@ -115,6 +116,10 @@ const validarFormulario = () => {
 
   if (!form.vehiculo.modelo.trim()) {
     errores["vehiculo.modelo"] = "El modelo es obligatorio.";
+  }
+
+  if (form.motivo_viaje === "Otro" && !form.motivo_viaje_otro.trim()) {
+    errores["motivo_viaje_otro"] = "Debes especificar el motivo del viaje.";
   }
 
   if (!form.destino.trim()) {
@@ -214,8 +219,14 @@ const convertirFechaParaBD = (fecha) => {
     setCargando(true);
 
     try {
+      const motivoViajeFinal =
+        form.motivo_viaje === "Otro"
+          ? `Otro: ${form.motivo_viaje_otro.trim()}`
+          : form.motivo_viaje;
+
       const response = await api.post("/tramites", {
         ...form,
+        motivo_viaje: motivoViajeFinal,
         frontera: "Complejo Los Libertadores"
       });
 
@@ -263,6 +274,7 @@ const convertirFechaParaBD = (fecha) => {
           observaciones: ""
         },
         motivo_viaje: "Turismo",
+        motivo_viaje_otro: "",
         destino: "",
         frontera: "Complejo Los Libertadores"
       });
@@ -491,15 +503,39 @@ const convertirFechaParaBD = (fecha) => {
             Motivo del viaje
             <select
               value={form.motivo_viaje}
-              onChange={(e) => cambiarSimple("motivo_viaje", e.target.value)}
+              onChange={(e) => {
+                cambiarSimple("motivo_viaje", e.target.value);
+              
+                if (e.target.value !== "Otro") {
+                  cambiarSimple("motivo_viaje_otro", "");
+                }
+              }}
             >
-              <option value="Turismo">Turismo</option>
-              <option value="Trabajo">Trabajo</option>
-              <option value="Comercio">Comercio</option>
-              <option value="Residencia">Residencia</option>
-              <option value="Otro">Otro</option>
+              <option>Turismo</option>
+              <option>Trabajo</option>
+              <option>Comercio</option>
+              <option>Residencia</option>
+              <option>Otro</option>
             </select>
           </label>
+            
+          {form.motivo_viaje === "Otro" && (
+            <label className="otro-motivo-field">
+              Especifique el motivo del viaje
+              <input
+                type="text"
+                placeholder="Ej: visita familiar, estudio, trámite personal"
+                value={form.motivo_viaje_otro}
+                onChange={(e) => cambiarSimple("motivo_viaje_otro", e.target.value)}
+                className={marcarCampo("motivo_viaje_otro")}
+              />
+              {camposFaltantes["motivo_viaje_otro"] && (
+                <small className="campo-error">
+                  {camposFaltantes["motivo_viaje_otro"]}
+                </small>
+              )}
+            </label>
+          )}
 
           <label>
             Destino
