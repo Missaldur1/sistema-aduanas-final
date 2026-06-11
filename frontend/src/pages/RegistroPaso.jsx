@@ -571,17 +571,11 @@ function RegistroPaso({ publico = false }) {
 
       const codigo = response.data?.codigo_tramite;
 
-      setMensaje({
-        tipo: "ok",
-        texto: `${
-          response.data?.mensaje || "Trámite registrado correctamente."
-        } Código de trámite: ${codigo}. Guarda este código para consultar con Aduanas.`
-      });
+      setMensaje(null);
 
       setComprobante({
         id: response.data?.id,
-        codigo,
-        fecha: new Date().toLocaleString("es-CL")
+        codigo
       });
 
       limpiarFormulario();
@@ -1018,17 +1012,12 @@ function RegistroPaso({ publico = false }) {
       )}
 
       {comprobante && (
-        <section className="qr-ticket-card">
+        <section className="qr-ticket-card qr-ticket-simple">
           <div className="qr-ticket-info">
             <p className="eyebrow">Comprobante digital</p>
             <h3>{comprobante.codigo}</h3>
-            <p>
-              Guarda este código. Aduana podrá usarlo para revisar tu trámite
-              registrado.
-            </p>
 
             <div className="qr-ticket-data">
-              <span>Fecha: {comprobante.fecha}</span>
               <span>Estado: En revisión aduanera</span>
             </div>
           </div>

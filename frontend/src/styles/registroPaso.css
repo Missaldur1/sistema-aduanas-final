@@ -535,3 +535,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+.qr-ticket-simple {
+  align-items: center;
+}
+
+.qr-ticket-simple .qr-ticket-data {
+  margin-top: 14px;
+}
+
+.qr-ticket-simple .qr-ticket-data span {
+  font-size: 14px;
+}
