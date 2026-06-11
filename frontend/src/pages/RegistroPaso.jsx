@@ -231,6 +231,33 @@ function RegistroPaso({ publico = false }) {
     return rut.replace(/\./g, "").replace(/-/g, "").trim().toUpperCase();
   };
 
+  const formatearRut = (valor) => {
+    
+    const rutLimpio = valor
+      .replace(/[^0-9kK]/g, "")
+      .toUpperCase()
+      .slice(0, 9);
+
+    if (rutLimpio.length <= 1) {
+      return rutLimpio;
+    }
+
+    const cuerpo = rutLimpio.slice(0, -1);
+    const dv = rutLimpio.slice(-1);
+
+    const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    return `${cuerpoFormateado}-${dv}`;
+  };
+  
+
+  const cambiarDocumento = (valor) => {
+    const valorFinal =
+      form.persona.documento_tipo === "RUT" ? formatearRut(valor) : valor;
+
+    cambiar("persona", "documento_numero", valorFinal);
+  };
+
   const validarRutChileno = (rut) => {
     const rutLimpio = limpiarRut(rut);
 
@@ -645,9 +672,7 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("persona.documento_numero")}
               value={form.persona.documento_numero}
-              onChange={(e) =>
-                cambiar("persona", "documento_numero", e.target.value)
-              }
+              onChange={(e) => cambiarDocumento(e.target.value)}
               placeholder={obtenerPlaceholderDocumento(form.persona.documento_tipo)}
             />
             {mostrarError("persona.documento_numero")}
