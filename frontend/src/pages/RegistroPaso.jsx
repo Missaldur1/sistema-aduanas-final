@@ -15,11 +15,7 @@ function RegistroPaso({ publico = false }) {
     }
   }, [publico]);
 
-  const [modoOscuro, setModoOscuro] = useState(() => {
-    return localStorage.getItem("modoRegistro") === "oscuro";
-  });
-
-  const [form, setForm] = useState({
+  const formularioInicial = {
     persona: {
       nombre: "",
       apellido: "",
@@ -52,8 +48,13 @@ function RegistroPaso({ publico = false }) {
     motivo_viaje_otro: "",
     destino: "",
     frontera: "Complejo Los Libertadores"
+  };
+
+  const [modoOscuro, setModoOscuro] = useState(() => {
+    return localStorage.getItem("modoRegistro") === "oscuro";
   });
 
+  const [form, setForm] = useState(formularioInicial);
   const [mensaje, setMensaje] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [comprobante, setComprobante] = useState(null);
@@ -65,6 +66,14 @@ function RegistroPaso({ publico = false }) {
     localStorage.setItem("modoRegistro", nuevoModo ? "oscuro" : "claro");
   };
 
+  const quitarError = (ruta) => {
+    setCamposFaltantes((prev) => {
+      const nuevosErrores = { ...prev };
+      delete nuevosErrores[ruta];
+      return nuevosErrores;
+    });
+  };
+
   const cambiar = (seccion, campo, valor) => {
     setForm((prev) => ({
       ...prev,
@@ -73,6 +82,8 @@ function RegistroPaso({ publico = false }) {
         [campo]: valor
       }
     }));
+
+    quitarError(`${seccion}.${campo}`);
   };
 
   const cambiarSimple = (campo, valor) => {
@@ -80,6 +91,8 @@ function RegistroPaso({ publico = false }) {
       ...prev,
       [campo]: valor
     }));
+
+    quitarError(campo);
   };
 
   const cambiarMotivoViaje = (valor) => {
@@ -91,6 +104,8 @@ function RegistroPaso({ publico = false }) {
 
     setCamposFaltantes((prev) => {
       const nuevosErrores = { ...prev };
+
+      delete nuevosErrores["motivo_viaje"];
 
       if (valor !== "Otro") {
         delete nuevosErrores["motivo_viaje_otro"];
@@ -104,65 +119,51 @@ function RegistroPaso({ publico = false }) {
     return camposFaltantes[ruta] ? "input-error" : "";
   };
 
-  const validarFormulario = () => {
-    const errores = {};
+  const mostrarError = (ruta) => {
+    return camposFaltantes[ruta] ? (
+      <small className="campo-error">{camposFaltantes[ruta]}</small>
+    ) : null;
+  };
 
-    if (!form.persona.nombre.trim()) {
-      errores["persona.nombre"] = "El nombre es obligatorio.";
-    }
+  const soloLetras = (texto) => {
+    return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(texto);
+  };
 
-    if (!form.persona.apellido.trim()) {
-      errores["persona.apellido"] = "El apellido es obligatorio.";
-    }
+  const validarEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
-    if (!form.persona.documento_numero.trim()) {
-      errores["persona.documento_numero"] = "El número de documento es obligatorio.";
-    }
+  const validarTelefono = (telefono) => {
+    return /^\+?[0-9\s-]{8,18}$/.test(telefono);
+  };
 
-    if (!form.persona.nacionalidad.trim()) {
-      errores["persona.nacionalidad"] = "La nacionalidad es obligatoria.";
-    }
+  const limpiarRut = (rut) => {
+    return rut.replace(/\./g, "").replace(/-/g, "").trim().toUpperCase();
+  };
 
-    if (!form.persona.fecha_nacimiento) {
-      errores["persona.fecha_nacimiento"] = "La fecha de nacimiento es obligatoria.";
-    }
+  const validarRutChileno = (rut) => {
+    const rutLimpio = limpiarRut(rut);
 
-    if (!form.vehiculo.patente.trim()) {
-      errores["vehiculo.patente"] = "La patente es obligatoria.";
-    }
-
-    if (!form.vehiculo.pais_origen.trim()) {
-      errores["vehiculo.pais_origen"] = "El país de origen es obligatorio.";
-    }
-
-    if (!form.vehiculo.marca.trim()) {
-      errores["vehiculo.marca"] = "La marca es obligatoria.";
-    }
-
-    if (!form.vehiculo.modelo.trim()) {
-      errores["vehiculo.modelo"] = "El modelo es obligatorio.";
-    }
-
-    if (form.motivo_viaje === "Otro" && !form.motivo_viaje_otro.trim()) {
-      errores["motivo_viaje_otro"] = "Debes especificar el motivo del viaje.";
-    }
-
-    if (!form.destino.trim()) {
-      errores["destino"] = "El destino es obligatorio.";
-    }
-
-    setCamposFaltantes(errores);
-
-    if (Object.keys(errores).length > 0) {
-      setMensaje({
-        tipo: "error",
-        texto: "Faltan datos obligatorios. Revisa los campos marcados en rojo."
-      });
-
+    if (!/^[0-9]{7,8}[0-9K]$/.test(rutLimpio)) {
       return false;
     }
 
-    return true;
+    const cuerpo = rutLimpio.slice(0, -1);
+    const dv = rutLimpio.slice(-1);
+
+    let suma = 0;
+    let multiplo = 2;
+
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+      suma += Number(cuerpo[i]) * multiplo;
+      multiplo = multiplo < 7 ? multiplo + 1 : 2;
+    }
+
+    const dvEsperado = 11 - (suma % 11);
+    const dvCalculado =
+      dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : String(dvEsperado);
+
+    return dv === dvCalculado;
   };
 
   const convertirFechaParaInput = (fechaTexto) => {
@@ -180,6 +181,203 @@ function RegistroPaso({ publico = false }) {
     const dia = String(fecha.getDate()).padStart(2, "0");
 
     return `${anio}-${mes}-${dia}`;
+  };
+
+  const validarFechaNacimiento = (fechaTexto) => {
+    if (!fechaTexto) {
+      return "La fecha de nacimiento es obligatoria.";
+    }
+
+    const fecha = convertirFechaParaInput(fechaTexto);
+    const hoy = new Date();
+
+    if (!fecha || Number.isNaN(fecha.getTime())) {
+      return "La fecha de nacimiento no es válida.";
+    }
+
+    if (fecha > hoy) {
+      return "La fecha de nacimiento no puede ser futura.";
+    }
+
+    const edadAproximada = hoy.getFullYear() - fecha.getFullYear();
+
+    if (edadAproximada > 120) {
+      return "La fecha de nacimiento no puede superar los 120 años.";
+    }
+
+    return null;
+  };
+
+  const validarFormulario = () => {
+    const errores = {};
+
+    const nombre = form.persona.nombre.trim();
+    const apellido = form.persona.apellido.trim();
+    const documento = form.persona.documento_numero.trim();
+    const nacionalidad = form.persona.nacionalidad.trim();
+    const telefono = form.persona.telefono.trim();
+    const email = form.persona.email.trim();
+
+    const patente = form.vehiculo.patente.trim();
+    const paisOrigen = form.vehiculo.pais_origen.trim();
+    const marca = form.vehiculo.marca.trim();
+    const modelo = form.vehiculo.modelo.trim();
+    const anio = form.vehiculo.anio.toString().trim();
+    const color = form.vehiculo.color.trim();
+    const chasis = form.vehiculo.chasis.trim();
+    const motor = form.vehiculo.motor.trim();
+
+    const destino = form.destino.trim();
+    const observaciones = form.declaracion.observaciones.trim();
+
+    if (!nombre) {
+      errores["persona.nombre"] = "El nombre es obligatorio.";
+    } else if (nombre.length < 2) {
+      errores["persona.nombre"] = "El nombre debe tener al menos 2 caracteres.";
+    } else if (!soloLetras(nombre)) {
+      errores["persona.nombre"] = "El nombre solo debe contener letras.";
+    }
+
+    if (!apellido) {
+      errores["persona.apellido"] = "El apellido es obligatorio.";
+    } else if (apellido.length < 2) {
+      errores["persona.apellido"] = "El apellido debe tener al menos 2 caracteres.";
+    } else if (!soloLetras(apellido)) {
+      errores["persona.apellido"] = "El apellido solo debe contener letras.";
+    }
+
+    if (!documento) {
+      errores["persona.documento_numero"] = "El número de documento es obligatorio.";
+    } else if (form.persona.documento_tipo === "RUT" && !validarRutChileno(documento)) {
+      errores["persona.documento_numero"] =
+        "Ingresa un RUT válido. Ej: 12.345.678-5.";
+    } else if (
+      form.persona.documento_tipo !== "RUT" &&
+      !/^[A-Za-z0-9-]{5,20}$/.test(documento)
+    ) {
+      errores["persona.documento_numero"] =
+        "El documento debe tener entre 5 y 20 caracteres.";
+    }
+
+    if (!nacionalidad) {
+      errores["persona.nacionalidad"] = "La nacionalidad es obligatoria.";
+    } else if (nacionalidad.length < 3) {
+      errores["persona.nacionalidad"] =
+        "La nacionalidad debe tener al menos 3 caracteres.";
+    } else if (!soloLetras(nacionalidad)) {
+      errores["persona.nacionalidad"] =
+        "La nacionalidad solo debe contener letras.";
+    }
+
+    const errorFecha = validarFechaNacimiento(form.persona.fecha_nacimiento);
+
+    if (errorFecha) {
+      errores["persona.fecha_nacimiento"] = errorFecha;
+    }
+
+    if (telefono && !validarTelefono(telefono)) {
+      errores["persona.telefono"] =
+        "Ingresa un teléfono válido. Ej: +56 9 1234 5678.";
+    }
+
+    if (email && !validarEmail(email)) {
+      errores["persona.email"] = "Ingresa un correo electrónico válido.";
+    }
+
+    if (!patente) {
+      errores["vehiculo.patente"] = "La patente es obligatoria.";
+    } else if (!/^[A-Z0-9-]{4,10}$/.test(patente.toUpperCase())) {
+      errores["vehiculo.patente"] =
+        "La patente debe tener entre 4 y 10 caracteres, solo letras y números.";
+    }
+
+    if (!paisOrigen) {
+      errores["vehiculo.pais_origen"] = "El país de origen es obligatorio.";
+    } else if (paisOrigen.length < 3) {
+      errores["vehiculo.pais_origen"] =
+        "El país de origen debe tener al menos 3 caracteres.";
+    } else if (!soloLetras(paisOrigen)) {
+      errores["vehiculo.pais_origen"] =
+        "El país de origen solo debe contener letras.";
+    }
+
+    if (!marca) {
+      errores["vehiculo.marca"] = "La marca es obligatoria.";
+    } else if (marca.length < 2) {
+      errores["vehiculo.marca"] = "La marca debe tener al menos 2 caracteres.";
+    }
+
+    if (!modelo) {
+      errores["vehiculo.modelo"] = "El modelo es obligatorio.";
+    } else if (modelo.length < 1) {
+      errores["vehiculo.modelo"] = "El modelo no puede estar vacío.";
+    }
+
+    if (anio) {
+      const anioNumero = Number(anio);
+      const anioActual = new Date().getFullYear();
+
+      if (!Number.isInteger(anioNumero)) {
+        errores["vehiculo.anio"] = "El año debe ser un número válido.";
+      } else if (anioNumero < 1950 || anioNumero > anioActual + 1) {
+        errores["vehiculo.anio"] =
+          `El año debe estar entre 1950 y ${anioActual + 1}.`;
+      }
+    }
+
+    if (color && !soloLetras(color)) {
+      errores["vehiculo.color"] = "El color solo debe contener letras.";
+    }
+
+    if (chasis && chasis.length < 5) {
+      errores["vehiculo.chasis"] =
+        "El número de chasis debe tener al menos 5 caracteres.";
+    }
+
+    if (motor && motor.length < 3) {
+      errores["vehiculo.motor"] =
+        "El número de motor debe tener al menos 3 caracteres.";
+    }
+
+    if (!form.motivo_viaje) {
+      errores["motivo_viaje"] = "El motivo del viaje es obligatorio.";
+    }
+
+    if (form.motivo_viaje === "Otro" && !form.motivo_viaje_otro.trim()) {
+      errores["motivo_viaje_otro"] =
+        "Debes especificar el motivo del viaje.";
+    } else if (
+      form.motivo_viaje === "Otro" &&
+      form.motivo_viaje_otro.trim().length < 3
+    ) {
+      errores["motivo_viaje_otro"] =
+        "El motivo personalizado debe tener al menos 3 caracteres.";
+    }
+
+    if (!destino) {
+      errores["destino"] = "El destino es obligatorio.";
+    } else if (destino.length < 3) {
+      errores["destino"] = "El destino debe tener al menos 3 caracteres.";
+    }
+
+    if (observaciones.length > 300) {
+      errores["declaracion.observaciones"] =
+        "Las observaciones no pueden superar los 300 caracteres.";
+    }
+
+    setCamposFaltantes(errores);
+
+    if (Object.keys(errores).length > 0) {
+      setMensaje({
+        tipo: "error",
+        texto:
+          "Faltan datos o existen campos con formato incorrecto. Revisa los campos marcados en rojo."
+      });
+
+      return false;
+    }
+
+    return true;
   };
 
   const cargarEscenario = (escenario) => {
@@ -201,40 +399,7 @@ function RegistroPaso({ publico = false }) {
   };
 
   const limpiarFormulario = () => {
-    setForm({
-      persona: {
-        nombre: "",
-        apellido: "",
-        documento_tipo: "RUT",
-        documento_numero: "",
-        nacionalidad: "",
-        fecha_nacimiento: "",
-        telefono: "",
-        email: ""
-      },
-      vehiculo: {
-        tipo: "Particular",
-        patente: "",
-        pais_origen: "",
-        marca: "",
-        modelo: "",
-        anio: "",
-        color: "",
-        chasis: "",
-        motor: ""
-      },
-      declaracion: {
-        transporta_alimentos: false,
-        transporta_vegetales: false,
-        transporta_animales: false,
-        dinero_mayor_declarable: false,
-        observaciones: ""
-      },
-      motivo_viaje: "Turismo",
-      motivo_viaje_otro: "",
-      destino: "",
-      frontera: "Complejo Los Libertadores"
-    });
+    setForm(formularioInicial);
   };
 
   const enviar = async (e) => {
@@ -282,7 +447,8 @@ function RegistroPaso({ publico = false }) {
     } catch (error) {
       setMensaje({
         tipo: "error",
-        texto: error.response?.data?.mensaje || "No se pudo registrar el trámite."
+        texto:
+          error.response?.data?.mensaje || "No se pudo registrar el trámite."
       });
     } finally {
       setCargando(false);
@@ -306,6 +472,7 @@ function RegistroPaso({ publico = false }) {
               onChange={(e) => cambiar("persona", "nombre", e.target.value)}
               placeholder="Ej: Carlos"
             />
+            {mostrarError("persona.nombre")}
           </label>
 
           <label>
@@ -316,13 +483,16 @@ function RegistroPaso({ publico = false }) {
               onChange={(e) => cambiar("persona", "apellido", e.target.value)}
               placeholder="Ej: Soto"
             />
+            {mostrarError("persona.apellido")}
           </label>
 
           <label>
             Tipo de documento
             <select
               value={form.persona.documento_tipo}
-              onChange={(e) => cambiar("persona", "documento_tipo", e.target.value)}
+              onChange={(e) =>
+                cambiar("persona", "documento_tipo", e.target.value)
+              }
             >
               <option value="RUT">RUT</option>
               <option value="Pasaporte">Pasaporte</option>
@@ -335,9 +505,12 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("persona.documento_numero")}
               value={form.persona.documento_numero}
-              onChange={(e) => cambiar("persona", "documento_numero", e.target.value)}
-              placeholder="Ej: 12.345.678-9"
+              onChange={(e) =>
+                cambiar("persona", "documento_numero", e.target.value)
+              }
+              placeholder="Ej: 12.345.678-5"
             />
+            {mostrarError("persona.documento_numero")}
           </label>
 
           <label>
@@ -345,17 +518,26 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("persona.nacionalidad")}
               value={form.persona.nacionalidad}
-              onChange={(e) => cambiar("persona", "nacionalidad", e.target.value)}
+              onChange={(e) =>
+                cambiar("persona", "nacionalidad", e.target.value)
+              }
               placeholder="Ej: Chilena"
             />
+            {mostrarError("persona.nacionalidad")}
           </label>
 
           <label>
             Fecha de nacimiento
             <DatePicker
-              selected={convertirFechaParaInput(form.persona.fecha_nacimiento)}
+              selected={convertirFechaParaInput(
+                form.persona.fecha_nacimiento
+              )}
               onChange={(fecha) =>
-                cambiar("persona", "fecha_nacimiento", convertirFechaParaBD(fecha))
+                cambiar(
+                  "persona",
+                  "fecha_nacimiento",
+                  convertirFechaParaBD(fecha)
+                )
               }
               dateFormat="dd/MM/yyyy"
               locale={es}
@@ -364,28 +546,35 @@ function RegistroPaso({ publico = false }) {
               showYearDropdown
               dropdownMode="select"
               maxDate={new Date()}
-              className={`date-picker-input ${marcarCampo("persona.fecha_nacimiento")}`}
+              className={`date-picker-input ${marcarCampo(
+                "persona.fecha_nacimiento"
+              )}`}
               calendarClassName="aduanas-calendar"
             />
+            {mostrarError("persona.fecha_nacimiento")}
           </label>
 
           <label>
             Teléfono
             <input
+              className={marcarCampo("persona.telefono")}
               value={form.persona.telefono}
               onChange={(e) => cambiar("persona", "telefono", e.target.value)}
               placeholder="Ej: +56 9 1234 5678"
             />
+            {mostrarError("persona.telefono")}
           </label>
 
           <label>
             Email
             <input
+              className={marcarCampo("persona.email")}
               type="email"
               value={form.persona.email}
               onChange={(e) => cambiar("persona", "email", e.target.value)}
               placeholder="Ej: persona@mail.com"
             />
+            {mostrarError("persona.email")}
           </label>
         </div>
       </section>
@@ -415,9 +604,12 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("vehiculo.patente")}
               value={form.vehiculo.patente}
-              onChange={(e) => cambiar("vehiculo", "patente", e.target.value.toUpperCase())}
+              onChange={(e) =>
+                cambiar("vehiculo", "patente", e.target.value.toUpperCase())
+              }
               placeholder="Ej: AB1234"
             />
+            {mostrarError("vehiculo.patente")}
           </label>
 
           <label>
@@ -425,9 +617,12 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("vehiculo.pais_origen")}
               value={form.vehiculo.pais_origen}
-              onChange={(e) => cambiar("vehiculo", "pais_origen", e.target.value)}
+              onChange={(e) =>
+                cambiar("vehiculo", "pais_origen", e.target.value)
+              }
               placeholder="Ej: Chile"
             />
+            {mostrarError("vehiculo.pais_origen")}
           </label>
 
           <label>
@@ -438,6 +633,7 @@ function RegistroPaso({ publico = false }) {
               onChange={(e) => cambiar("vehiculo", "marca", e.target.value)}
               placeholder="Ej: Toyota"
             />
+            {mostrarError("vehiculo.marca")}
           </label>
 
           <label>
@@ -448,11 +644,13 @@ function RegistroPaso({ publico = false }) {
               onChange={(e) => cambiar("vehiculo", "modelo", e.target.value)}
               placeholder="Ej: Yaris"
             />
+            {mostrarError("vehiculo.modelo")}
           </label>
 
           <label>
             Año
             <input
+              className={marcarCampo("vehiculo.anio")}
               type="number"
               min="1950"
               max="2030"
@@ -460,33 +658,40 @@ function RegistroPaso({ publico = false }) {
               onChange={(e) => cambiar("vehiculo", "anio", e.target.value)}
               placeholder="Ej: 2020"
             />
+            {mostrarError("vehiculo.anio")}
           </label>
 
           <label>
             Color
             <input
+              className={marcarCampo("vehiculo.color")}
               value={form.vehiculo.color}
               onChange={(e) => cambiar("vehiculo", "color", e.target.value)}
               placeholder="Ej: Blanco"
             />
+            {mostrarError("vehiculo.color")}
           </label>
 
           <label>
             Número de chasis
             <input
+              className={marcarCampo("vehiculo.chasis")}
               value={form.vehiculo.chasis}
               onChange={(e) => cambiar("vehiculo", "chasis", e.target.value)}
               placeholder="Opcional"
             />
+            {mostrarError("vehiculo.chasis")}
           </label>
 
           <label>
             Número de motor
             <input
+              className={marcarCampo("vehiculo.motor")}
               value={form.vehiculo.motor}
               onChange={(e) => cambiar("vehiculo", "motor", e.target.value)}
               placeholder="Opcional"
             />
+            {mostrarError("vehiculo.motor")}
           </label>
         </div>
       </section>
@@ -501,6 +706,7 @@ function RegistroPaso({ publico = false }) {
           <label>
             Motivo del viaje
             <select
+              className={marcarCampo("motivo_viaje")}
               value={form.motivo_viaje}
               onChange={(e) => cambiarMotivoViaje(e.target.value)}
             >
@@ -510,6 +716,7 @@ function RegistroPaso({ publico = false }) {
               <option value="Residencia">Residencia</option>
               <option value="Otro">Otro</option>
             </select>
+            {mostrarError("motivo_viaje")}
           </label>
 
           {form.motivo_viaje === "Otro" && (
@@ -519,15 +726,12 @@ function RegistroPaso({ publico = false }) {
                 type="text"
                 placeholder="Ej: visita familiar, estudio, trámite personal"
                 value={form.motivo_viaje_otro}
-                onChange={(e) => cambiarSimple("motivo_viaje_otro", e.target.value)}
+                onChange={(e) =>
+                  cambiarSimple("motivo_viaje_otro", e.target.value)
+                }
                 className={marcarCampo("motivo_viaje_otro")}
               />
-
-              {camposFaltantes["motivo_viaje_otro"] && (
-                <small className="campo-error">
-                  {camposFaltantes["motivo_viaje_otro"]}
-                </small>
-              )}
+              {mostrarError("motivo_viaje_otro")}
             </label>
           )}
 
@@ -539,6 +743,7 @@ function RegistroPaso({ publico = false }) {
               onChange={(e) => cambiarSimple("destino", e.target.value)}
               placeholder="Ej: Argentina"
             />
+            {mostrarError("destino")}
           </label>
 
           <label>
@@ -557,7 +762,11 @@ function RegistroPaso({ publico = false }) {
               type="checkbox"
               checked={form.declaracion.transporta_alimentos}
               onChange={(e) =>
-                cambiar("declaracion", "transporta_alimentos", e.target.checked)
+                cambiar(
+                  "declaracion",
+                  "transporta_alimentos",
+                  e.target.checked
+                )
               }
             />
             Transporta alimentos
@@ -568,7 +777,11 @@ function RegistroPaso({ publico = false }) {
               type="checkbox"
               checked={form.declaracion.transporta_vegetales}
               onChange={(e) =>
-                cambiar("declaracion", "transporta_vegetales", e.target.checked)
+                cambiar(
+                  "declaracion",
+                  "transporta_vegetales",
+                  e.target.checked
+                )
               }
             />
             Transporta vegetales
@@ -579,7 +792,11 @@ function RegistroPaso({ publico = false }) {
               type="checkbox"
               checked={form.declaracion.transporta_animales}
               onChange={(e) =>
-                cambiar("declaracion", "transporta_animales", e.target.checked)
+                cambiar(
+                  "declaracion",
+                  "transporta_animales",
+                  e.target.checked
+                )
               }
             />
             Transporta animales
@@ -590,7 +807,11 @@ function RegistroPaso({ publico = false }) {
               type="checkbox"
               checked={form.declaracion.dinero_mayor_declarable}
               onChange={(e) =>
-                cambiar("declaracion", "dinero_mayor_declarable", e.target.checked)
+                cambiar(
+                  "declaracion",
+                  "dinero_mayor_declarable",
+                  e.target.checked
+                )
               }
             />
             Dinero o valores declarables
@@ -598,14 +819,23 @@ function RegistroPaso({ publico = false }) {
         </div>
 
         <textarea
+          className={marcarCampo("declaracion.observaciones")}
           placeholder="Observaciones adicionales"
           value={form.declaracion.observaciones}
-          onChange={(e) => cambiar("declaracion", "observaciones", e.target.value)}
+          onChange={(e) =>
+            cambiar("declaracion", "observaciones", e.target.value)
+          }
+          maxLength={300}
         />
+        {mostrarError("declaracion.observaciones")}
       </section>
 
       {mensaje && (
-        <div className={`alert ${mensaje.tipo === "ok" ? "alert-success" : "alert-error"}`}>
+        <div
+          className={`alert ${
+            mensaje.tipo === "ok" ? "alert-success" : "alert-error"
+          }`}
+        >
           {mensaje.texto}
         </div>
       )}
@@ -616,7 +846,8 @@ function RegistroPaso({ publico = false }) {
             <p className="eyebrow">Comprobante digital</p>
             <h3>{comprobante.codigo}</h3>
             <p>
-              Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.
+              Guarda este código. Aduana podrá usarlo para revisar tu trámite
+              registrado.
             </p>
 
             <div className="qr-ticket-data">
@@ -651,8 +882,8 @@ function RegistroPaso({ publico = false }) {
             <p className="eyebrow">Sistema Integrado de Gestión Aduanera</p>
             <h1>Registro de paso fronterizo</h1>
             <p>
-              Completa tus datos personales, información del vehículo y declaración jurada
-              para que Aduanas pueda revisar tu solicitud.
+              Completa tus datos personales, información del vehículo y declaración
+              jurada para que Aduanas pueda revisar tu solicitud.
             </p>
           </div>
 
@@ -673,7 +904,8 @@ function RegistroPaso({ publico = false }) {
             <p className="eyebrow">Herramientas de prueba</p>
             <h2>Escenarios rápidos</h2>
             <p>
-              Carga datos automáticamente para probar distintos casos de validación aduanera.
+              Carga datos automáticamente para probar distintos casos de validación
+              aduanera.
             </p>
           </div>
 
