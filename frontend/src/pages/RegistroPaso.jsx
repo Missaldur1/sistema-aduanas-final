@@ -662,13 +662,6 @@ const convertirFechaParaBD = (fecha) => {
               ))}
             </select>
 
-            <button
-              type="button"
-              className="danger-action"
-              onClick={limpiarRegistrosBD}
-            >
-              Eliminar registros BD
-            </button>
           </div>
         </section>
 

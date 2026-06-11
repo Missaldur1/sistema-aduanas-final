@@ -34,3 +34,56 @@
 .mini-alert,
 .tips-list span { padding: 12px; border-radius: 16px; background: var(--soft); display: grid; gap: 5px; }
 .mini-alert span { color: var(--muted); font-size: .9rem; }
+
+.admin-actions-card {
+  margin-bottom: 22px;
+  padding: 22px;
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.admin-actions-card h2 {
+  margin: 4px 0 8px;
+  color: #0f172a;
+}
+
+.admin-actions-card p {
+  margin: 0;
+  color: #64748b;
+}
+
+.danger-action {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid #fecaca;
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger-action:hover {
+  background: #fecaca;
+}
+
+@media (max-width: 760px) {
+  .admin-actions-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .danger-action {
+    width: 100%;
+    justify-content: center;
+  }
+}
