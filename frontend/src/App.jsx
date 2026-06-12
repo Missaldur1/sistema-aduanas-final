@@ -8,6 +8,7 @@ import Vehiculos from "./pages/Vehiculos";
 import Validacion from "./pages/Validacion";
 import Usuarios from "./pages/Usuarios";
 import DetalleTramite from "./pages/DetalleTramite";
+import EscanearQR from "./pages/EscanearQR";
 
 function RutaPrivada({ children, roles }) {
   if (!estaAutenticado()) return <Navigate to="/admin" replace />;
@@ -32,6 +33,16 @@ function App() {
       <Route path="/admin" element={<Login />} />
 
       {/* Rutas privadas del administrador */}
+
+      <Route
+        path="/escanear-qr"
+        element={
+          <RutaPrivada roles={["ADMIN"]}>
+            <EscanearQR />
+          </RutaPrivada>
+        }
+      />
+
       <Route
         path="/dashboard"
         element={

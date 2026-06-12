@@ -1,10 +1,11 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Car,
   ClipboardCheck,
   LogOut,
   Menu,
+  QrCode,
   ShieldCheck,
   UserCircle,
   Users,
@@ -26,6 +27,7 @@ function Layout({ children, titulo, subtitulo }) {
 
   const enlaces = [
     { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
+    ...(esAdmin ? [{ to: "/escanear-qr", label: "Escanear QR", icon: QrCode }] : []),
     { to: "/vehiculos", label: "Vehículos", icon: Car },
     ...(esAdmin ? [{ to: "/validacion", label: "Validaciones", icon: ClipboardCheck }] : []),
     ...(esAdmin ? [{ to: "/usuarios", label: "Usuarios", icon: Users }] : []),

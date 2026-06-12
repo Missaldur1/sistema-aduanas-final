@@ -5,7 +5,8 @@ const {
   crearTramite,
   listarTramites,
   validarTramite,
-  obtenerDetalleTramite
+  obtenerDetalleTramite,
+  obtenerTramitePorCodigo
 } = require("../controllers/tramites.controller");
 
 const { autenticar, autorizar } = require("../middleware/auth.middleware");
@@ -16,6 +17,7 @@ router.post("/", crearTramite);
 // Rutas privadas: solo Aduana/Admin puede revisar y validar
 router.get("/", autenticar, listarTramites);
 router.get("/:id", autenticar, autorizar("ADMIN"), obtenerDetalleTramite);
+router.get("/codigo/:codigo", autenticar, autorizar("ADMIN"), obtenerTramitePorCodigo);
 router.patch("/:id/validar", autenticar, autorizar("ADMIN"), validarTramite);
 
 module.exports = router;

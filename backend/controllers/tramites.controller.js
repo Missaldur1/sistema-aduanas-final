@@ -411,4 +411,55 @@ const obtenerDetalleTramite = (req, res) => {
   });
 };
 
-module.exports = { crearTramite, listarTramites, validarTramite, obtenerDetalleTramite };
+const obtenerTramitePorCodigo = (req, res) => {
+  const { codigo } = req.params;
+
+  if (!codigo) {
+    return res.status(400).json({
+      mensaje: "Código de trámite requerido"
+    });
+  }
+
+  db.get(
+    `SELECT 
+      t.id,
+      t.codigo_tramite,
+      t.estado,
+      t.destino,
+      t.frontera,
+      t.nivel_riesgo,
+      p.nombre || ' ' || p.apellido AS persona_nombre,
+      p.documento_numero,
+      v.patente,
+      v.marca,
+      v.modelo
+    FROM tramites t
+    INNER JOIN personas p ON t.persona_id = p.id
+    INNER JOIN vehiculos v ON t.vehiculo_id = v.id
+    WHERE t.codigo_tramite = ?`,
+    [codigo.trim()],
+    (error, tramite) => {
+      if (error) {
+        return res.status(500).json({
+          mensaje: "Error al buscar el trámite por código"
+        });
+      }
+
+      if (!tramite) {
+        return res.status(404).json({
+          mensaje: "No se encontró un trámite con ese código"
+        });
+      }
+
+      return res.json(tramite);
+    }
+  );
+};
+
+module.exports = {
+  crearTramite,
+  listarTramites,
+  validarTramite,
+  obtenerDetalleTramite,
+  obtenerTramitePorCodigo
+};
