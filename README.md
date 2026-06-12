@@ -2,13 +2,37 @@
 
 Sistema web desarrollado en JavaScript para apoyar el registro y control de pasos fronterizos en el Complejo Los Libertadores. Permite registrar personas, vehículos, declaraciones juradas y trámites aduaneros, además de entregar herramientas de validación para funcionarios de Aduana.
 
-El proyecto cuenta con una interfaz responsive compatible con computadores, tablets y smartphones.
+El sistema cuenta con una interfaz responsive compatible con computadores, tablets y smartphones.
+
+---
+
+## Enlaces del sistema desplegado
+
+### Frontend
+
+```txt
+https://sistema-aduanas-final.vercel.app/
+```
+
+### Backend
+
+```txt
+https://sistema-aduanas-backend.onrender.com
+```
+
+### API Backend
+
+```txt
+https://sistema-aduanas-backend.onrender.com/api
+```
+
+> Nota: Render en plan gratuito puede suspender el backend por inactividad. La primera carga puede tardar algunos segundos.
 
 ---
 
 ## Objetivo del sistema
 
-El objetivo principal es digitalizar y centralizar el registro de personas y vehículos que desean cruzar por aduanas, permitiendo que el personal de Aduana pueda revisar antecedentes, declaraciones, alertas y niveles de riesgo de manera más rápida y ordenada.
+El objetivo principal es digitalizar y centralizar el registro de personas y vehículos que desean cruzar por Aduanas, permitiendo que el personal autorizado pueda revisar antecedentes, declaraciones, alertas y niveles de riesgo de manera más rápida y ordenada.
 
 ---
 
@@ -24,6 +48,7 @@ El objetivo principal es digitalizar y centralizar el registro de personas y veh
 * React Datepicker
 * QR Code React
 * CSS modular separado por vistas
+* Vercel para despliegue web
 
 ### Backend
 
@@ -34,10 +59,11 @@ El objetivo principal es digitalizar y centralizar el registro de personas y veh
 * bcryptjs
 * CORS
 * dotenv
+* Render para despliegue del servidor
 
 ### Base de datos
 
-* SQLite local para desarrollo y pruebas.
+* SQLite para desarrollo, pruebas y demo web.
 
 ---
 
@@ -62,6 +88,7 @@ sistema-aduanas/
 │   │   ├── pages/
 │   │   ├── styles/
 │   │   └── utils/
+│   ├── vercel.json
 │   └── package.json
 │
 ├── README.md
@@ -82,11 +109,11 @@ Funciones principales:
 * Revisar trámites registrados.
 * Ver detalle completo de cada trámite.
 * Validar trámites.
-* Revisar alertas.
+* Revisar alertas internas.
 * Consultar datos de personas y vehículos.
 * Ver nivel de riesgo aduanero.
 * Gestionar usuarios.
-* Limpiar registros de prueba en modo desarrollo.
+* Limpiar registros de prueba desde el panel administrativo.
 
 ### Persona
 
@@ -99,7 +126,7 @@ Funciones principales:
 * Completar declaración jurada.
 * Enviar el trámite a Aduana.
 * Recibir código de trámite.
-* Recibir comprobante con código QR.
+* Recibir comprobante digital con código QR.
 
 ---
 
@@ -111,7 +138,11 @@ Funciones principales:
 http://localhost:5173/
 ```
 
-Esta pantalla es pública y permite registrar un nuevo paso fronterizo.
+En producción:
+
+```txt
+https://sistema-aduanas-final.vercel.app/
+```
 
 ### Login de Aduana
 
@@ -119,7 +150,11 @@ Esta pantalla es pública y permite registrar un nuevo paso fronterizo.
 http://localhost:5173/admin
 ```
 
-Pantalla de acceso para funcionarios de Aduana.
+En producción:
+
+```txt
+https://sistema-aduanas-final.vercel.app/admin
+```
 
 ### Panel de Aduana
 
@@ -127,7 +162,11 @@ Pantalla de acceso para funcionarios de Aduana.
 http://localhost:5173/dashboard
 ```
 
-Panel privado para revisar estadísticas, trámites y alertas.
+En producción:
+
+```txt
+https://sistema-aduanas-final.vercel.app/dashboard
+```
 
 ---
 
@@ -147,10 +186,16 @@ Panel privado para revisar estadísticas, trámites y alertas.
 * Contraseñas cifradas con bcryptjs.
 * Dashboard administrativo.
 * Registro de persona, vehículo y declaración jurada.
-* Código único de trámite.
+* Código único de trámite con formato `ADU-2026-00001`.
 * Comprobante digital con código QR.
 * Modo claro y modo oscuro.
-* Diseño responsive para smartphone.
+* Diseño responsive compatible con smartphone.
+* Validaciones completas en el formulario público.
+* Formateo automático de RUT con puntos y guion.
+* Validación de RUT chileno mediante dígito verificador.
+* Selección de nacionalidad con opción personalizada.
+* Selector de prefijo telefónico internacional.
+* Campo personalizado para motivo de viaje cuando se selecciona “Otro”.
 * Semáforo inteligente de riesgo aduanero.
 * Detección automática de antecedentes por RUT/documento.
 * Detección automática de alertas vehiculares por patente.
@@ -158,7 +203,45 @@ Panel privado para revisar estadísticas, trámites y alertas.
 * Vista de detalle completo del trámite.
 * Validación simulada PDI/SAG/Aduana.
 * Herramientas de prueba para cargar escenarios automáticamente.
-* Botón de limpieza de registros para pruebas en desarrollo.
+* Limpieza de registros desde el panel de administrador.
+
+---
+
+## Validaciones del formulario público
+
+### Datos de la persona
+
+* Nombre obligatorio.
+* Apellido obligatorio.
+* Documento obligatorio.
+* RUT con formato automático y validación real.
+* Pasaporte/DNI con validación de longitud.
+* Nacionalidad obligatoria.
+* Nacionalidad personalizada sin números ni caracteres especiales.
+* Fecha de nacimiento obligatoria.
+* Fecha de nacimiento no puede ser futura.
+* Teléfono opcional con prefijo internacional.
+* Email opcional con formato válido.
+
+### Datos del vehículo
+
+* Patente obligatoria.
+* País de origen obligatorio.
+* Marca obligatoria.
+* Modelo obligatorio.
+* Año validado si se ingresa.
+* Color validado si se ingresa.
+* Número de chasis opcional.
+* Número de motor opcional.
+
+### Declaración y viaje
+
+* Motivo del viaje obligatorio.
+* Motivo personalizado si se selecciona “Otro”.
+* Destino obligatorio.
+* Frontera fija: Complejo Los Libertadores.
+* Declaración de alimentos, vegetales, animales y dinero declarable.
+* Observaciones opcionales.
 
 ---
 
@@ -199,11 +282,11 @@ Ejemplos de escenarios:
 * Declaración SAG.
 * Alto riesgo.
 
-Esto permite probar el sistema de forma rápida sin tener que escribir todos los datos manualmente.
+Esto permite probar el sistema rápidamente sin escribir todos los datos manualmente.
 
 ---
 
-## Ejecutar el proyecto
+## Ejecutar el proyecto localmente
 
 ### 1. Clonar el repositorio
 
@@ -286,9 +369,76 @@ http://192.168.1.35:5173/
 
 ---
 
+## Variables de entorno
+
+### Frontend en Vercel
+
+```txt
+VITE_API_URL=https://sistema-aduanas-backend.onrender.com/api
+```
+
+### Backend en Render
+
+```txt
+NODE_ENV=production
+JWT_SECRET=clave_segura_del_proyecto
+FRONTEND_URLS=http://localhost:5173,https://sistema-aduanas-final.vercel.app
+NODE_VERSION=20
+```
+
+---
+
+## Configuración de despliegue
+
+### Frontend en Vercel
+
+Configuración utilizada:
+
+```txt
+Framework Preset: Vite
+Root Directory: frontend
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
+
+Archivo necesario para rutas de React Router:
+
+```txt
+frontend/vercel.json
+```
+
+Contenido:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+### Backend en Render
+
+Configuración utilizada:
+
+```txt
+Language: Node
+Root Directory: backend
+Build Command: npm install
+Start Command: npm start
+```
+
+El backend usa Node 20 para evitar problemas de compatibilidad con SQLite.
+
+---
+
 ## Base de datos
 
-El sistema usa SQLite en desarrollo.
+El sistema usa SQLite.
 
 La base de datos se genera en:
 
@@ -308,6 +458,8 @@ alertas
 validaciones
 ```
 
+En producción demo con Render, SQLite funciona para pruebas, pero para un sistema más estable se recomienda migrar a PostgreSQL, Supabase o Neon.
+
 ---
 
 ## Archivos importantes
@@ -322,6 +474,8 @@ frontend/src/pages/Validacion.jsx
 frontend/src/pages/DetalleTramite.jsx
 frontend/src/components/Layout.jsx
 frontend/src/api/api.js
+frontend/src/utils/escenariosPrueba.js
+frontend/vercel.json
 ```
 
 ### Backend
@@ -425,20 +579,6 @@ git push
 
 ---
 
-## Posible despliegue gratuito
-
-Para publicar el sistema gratuitamente se recomienda:
-
-```txt
-Frontend: Vercel o Netlify
-Backend: Render
-Base de datos: SQLite para demo o PostgreSQL para uso más estable
-```
-
-Para una presentación o demo, Vercel + Render es suficiente.
-
----
-
 ## Estado actual del proyecto
 
 El sistema actualmente cuenta con:
@@ -447,14 +587,19 @@ El sistema actualmente cuenta con:
 * Login administrativo.
 * Panel de Aduana.
 * Registro en base de datos.
-* Validaciones simuladas.
+* Validaciones completas de formulario.
+* Formateo automático de RUT.
+* Selector de nacionalidad y prefijo telefónico.
+* Validaciones simuladas PDI/SAG/Aduana.
 * Riesgo automático.
 * Alertas internas.
 * QR de trámite.
 * Modo oscuro.
 * Diseño responsive.
 * Herramientas de prueba.
-* Limpieza automática de registros en desarrollo.
+* Limpieza automática de registros desde el panel administrativo.
+* Frontend desplegado en Vercel.
+* Backend desplegado en Render.
 
 ---
 
