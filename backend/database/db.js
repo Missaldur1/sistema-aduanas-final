@@ -105,6 +105,24 @@ async function crearTablas() {
   `);
 
   await run(`
+    CREATE TABLE IF NOT EXISTS menores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tramite_id INTEGER NOT NULL,
+      nombre TEXT NOT NULL,
+      apellido TEXT NOT NULL,
+      documento_tipo TEXT NOT NULL,
+      documento_numero TEXT NOT NULL,
+      nacionalidad TEXT NOT NULL,
+      fecha_nacimiento TEXT,
+      parentesco TEXT NOT NULL,
+      autorizacion_viaje TEXT DEFAULT '',
+      observaciones TEXT DEFAULT '',
+      creado_en TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tramite_id) REFERENCES tramites(id)
+    )
+  `);
+
+  await run(`
     CREATE TABLE IF NOT EXISTS declaraciones (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tramite_id INTEGER NOT NULL,
@@ -170,6 +188,7 @@ async function seed() {
     [adminHash]
   );
 }
+
 crearTablas()
   .then(seed)
   .catch((error) => console.error("Error preparando base de datos:", error.message));

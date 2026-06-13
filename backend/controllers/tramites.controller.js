@@ -4,6 +4,33 @@ const { buscarPersonaPrueba } = require("../utils/personasPrueba");
 const { buscarVehiculoPrueba } = require("../utils/vehiculosPrueba");
 const registrarAccion = require("../utils/registrarAccion");
 
+const runQuery = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function (error) {
+      if (error) reject(error);
+      else resolve(this);
+    });
+  });
+};
+
+const getQuery = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (error, row) => {
+      if (error) reject(error);
+      else resolve(row);
+    });
+  });
+};
+
+const allQuery = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (error, rows) => {
+      if (error) reject(error);
+      else resolve(rows);
+    });
+  });
+};
+
 const limpiarTexto = (valor = "") => {
   return valor.toString().trim();
 };
@@ -81,10 +108,113 @@ const normalizarPatente = (patente = "") => {
     .replace(/-/g, "");
 };
 
+const validarFechaNoFutura = (fechaTexto = "") => {
+  if (!fechaTexto) return true;
+
+  const fecha = new Date(fechaTexto);
+  const hoy = new Date();
+
+  if (Number.isNaN(fecha.getTime())) return false;
+
+  return fecha <= hoy;
+};
+
+const validarMenores = (menores = []) => {
+  const errores = [];
+
+  if (!Array.isArray(menores)) {
+    errores.push("Los menores acompañantes deben enviarse como una lista.");
+    return errores;
+  }
+
+  menores.forEach((menor, index) => {
+    const numeroMenor = index + 1;
+
+    const nombre = limpiarTexto(menor.nombre);
+    const apellido = limpiarTexto(menor.apellido);
+    const documentoTipo = limpiarTexto(menor.documento_tipo);
+    const documentoNumero = limpiarTexto(menor.documento_numero);
+    const nacionalidad = limpiarTexto(menor.nacionalidad);
+    const parentesco = limpiarTexto(menor.parentesco);
+    const observaciones = limpiarTexto(menor.observaciones);
+
+    if (nombre.length < 2) {
+      errores.push(`Menor ${numeroMenor}: el nombre debe tener al menos 2 caracteres.`);
+    }
+
+    if (apellido.length < 2) {
+      errores.push(`Menor ${numeroMenor}: el apellido debe tener al menos 2 caracteres.`);
+    }
+
+    if (nombre && !soloLetras(nombre)) {
+      errores.push(`Menor ${numeroMenor}: el nombre solo puede contener letras.`);
+    }
+
+    if (apellido && !soloLetras(apellido)) {
+      errores.push(`Menor ${numeroMenor}: el apellido solo puede contener letras.`);
+    }
+
+    if (!["RUT", "Pasaporte", "DNI"].includes(documentoTipo)) {
+      errores.push(`Menor ${numeroMenor}: el tipo de documento no es válido.`);
+    }
+
+    if (!documentoNumero) {
+      errores.push(`Menor ${numeroMenor}: el número de documento es obligatorio.`);
+    }
+
+    if (documentoTipo === "RUT" && !validarRutChileno(documentoNumero)) {
+      errores.push(`Menor ${numeroMenor}: el RUT ingresado no es válido.`);
+    }
+
+    if (
+      documentoTipo !== "RUT" &&
+      documentoNumero &&
+      !/^[A-Za-z0-9-]{5,20}$/.test(documentoNumero)
+    ) {
+      errores.push(`Menor ${numeroMenor}: el documento debe tener entre 5 y 20 caracteres.`);
+    }
+
+    if (!nacionalidad || nacionalidad.length < 3) {
+      errores.push(`Menor ${numeroMenor}: la nacionalidad es obligatoria.`);
+    }
+
+    if (!validarFechaNoFutura(menor.fecha_nacimiento)) {
+      errores.push(`Menor ${numeroMenor}: la fecha de nacimiento no puede ser futura.`);
+    }
+
+    if (!parentesco || parentesco.length < 2) {
+      errores.push(`Menor ${numeroMenor}: el parentesco o relación es obligatorio.`);
+    }
+
+    if (observaciones.length > 300) {
+      errores.push(`Menor ${numeroMenor}: las observaciones no pueden superar los 300 caracteres.`);
+    }
+  });
+
+  return errores;
+};
+
+const normalizarMenores = (menores = []) => {
+  if (!Array.isArray(menores)) return [];
+
+  return menores.map((menor) => ({
+    nombre: limpiarTexto(menor.nombre),
+    apellido: limpiarTexto(menor.apellido),
+    documento_tipo: limpiarTexto(menor.documento_tipo),
+    documento_numero: normalizarDocumento(menor.documento_tipo, menor.documento_numero),
+    nacionalidad: limpiarTexto(menor.nacionalidad),
+    fecha_nacimiento: limpiarTexto(menor.fecha_nacimiento),
+    parentesco: limpiarTexto(menor.parentesco),
+    autorizacion_viaje: limpiarTexto(menor.autorizacion_viaje),
+    observaciones: limpiarTexto(menor.observaciones),
+  }));
+};
+
 const validarDatosTramite = ({
   persona,
   vehiculo,
   declaracion,
+  menores = [],
   motivo_viaje,
   destino,
 }) => {
@@ -175,6 +305,8 @@ const validarDatosTramite = ({
     errores.push("Las observaciones no pueden superar los 300 caracteres.");
   }
 
+  errores.push(...validarMenores(menores));
+
   return errores;
 };
 
@@ -218,9 +350,16 @@ function generarResultado(row) {
   };
 }
 
-const crearTramite = (req, res) => {
-  const { persona, vehiculo, declaracion, motivo_viaje, destino, frontera } =
-    req.body;
+const crearTramite = async (req, res) => {
+  const {
+    persona,
+    vehiculo,
+    declaracion,
+    menores = [],
+    motivo_viaje,
+    destino,
+    frontera,
+  } = req.body;
 
   const erroresValidacion = validarDatosTramite(req.body);
 
@@ -269,6 +408,8 @@ const crearTramite = (req, res) => {
     observaciones: limpiarTexto(declaracion?.observaciones),
   };
 
+  const menoresNormalizados = normalizarMenores(menores);
+
   const personaPrueba = buscarPersonaPrueba(personaNormalizada.documento_numero);
   const vehiculoPrueba = buscarVehiculoPrueba(vehiculoNormalizado.patente);
 
@@ -293,38 +434,10 @@ const crearTramite = (req, res) => {
     declaracionNormalizada
   );
 
-  const personaCampos = [
-    "nombre",
-    "apellido",
-    "documento_tipo",
-    "documento_numero",
-    "nacionalidad",
-  ];
+  try {
+    await runQuery("BEGIN TRANSACTION");
 
-  const vehiculoCampos = ["tipo", "patente", "pais_origen", "marca", "modelo"];
-
-  const faltantesPersona = personaCampos.filter(
-    (campo) => !personaValidada[campo]
-  );
-
-  const faltantesVehiculo = vehiculoCampos.filter(
-    (campo) => !vehiculoValidado[campo]
-  );
-
-  if (faltantesPersona.length || faltantesVehiculo.length) {
-    return res.status(400).json({
-      mensaje: "Faltan datos obligatorios",
-      faltantes: [
-        ...faltantesPersona.map((campo) => `persona.${campo}`),
-        ...faltantesVehiculo.map((campo) => `vehiculo.${campo}`),
-      ],
-    });
-  }
-
-  db.serialize(() => {
-    db.run("BEGIN TRANSACTION");
-
-    db.run(
+    await runQuery(
       `INSERT OR IGNORE INTO personas
        (
         usuario_id,
@@ -355,7 +468,7 @@ const crearTramite = (req, res) => {
       ]
     );
 
-    db.run(
+    await runQuery(
       `UPDATE personas SET
         nombre = ?,
         apellido = ?,
@@ -379,7 +492,7 @@ const crearTramite = (req, res) => {
       ]
     );
 
-    db.run(
+    await runQuery(
       `INSERT OR IGNORE INTO vehiculos
        (
         usuario_id,
@@ -412,7 +525,7 @@ const crearTramite = (req, res) => {
       ]
     );
 
-    db.run(
+    await runQuery(
       `UPDATE vehiculos SET
         tipo = ?,
         pais_origen = ?,
@@ -440,136 +553,154 @@ const crearTramite = (req, res) => {
       ]
     );
 
-    db.get(
+    const ids = await getQuery(
       `SELECT 
         p.id AS persona_id,
-        v.id AS vehiculo_id,
-        p.antecedente_penal,
-        v.antecedente_vehiculo
+        v.id AS vehiculo_id
        FROM personas p, vehiculos v
        WHERE p.documento_numero = ? AND v.patente = ?`,
-      [personaValidada.documento_numero, vehiculoValidado.patente],
-      (error, ids) => {
-        if (error || !ids) {
-          db.run("ROLLBACK");
-          return res.status(500).json({
-            mensaje: "Error al preparar trámite",
-          });
-        }
-
-        db.run(
-          `INSERT INTO tramites
-           (
-            persona_id,
-            vehiculo_id,
-            usuario_id,
-            frontera,
-            motivo_viaje,
-            destino,
-            estado,
-            puntaje_riesgo,
-            nivel_riesgo,
-            motivo_riesgo,
-            accion_recomendada
-           )
-           VALUES (?, ?, ?, ?, ?, ?, 'PENDIENTE', ?, ?, ?, ?)`,
-          [
-            ids.persona_id,
-            ids.vehiculo_id,
-            usuarioId,
-            frontera || "Complejo Los Libertadores",
-            motivoViajeNormalizado,
-            destinoNormalizado,
-            riesgo.puntaje,
-            riesgo.nivel,
-            riesgo.motivos,
-            riesgo.accion,
-          ],
-          function (errorTramite) {
-            if (errorTramite) {
-              db.run("ROLLBACK");
-              return res.status(500).json({
-                mensaje: "Error al crear trámite",
-              });
-            }
-
-            const tramiteId = this.lastID;
-            const codigoTramite = `ADU-${new Date().getFullYear()}-${String(
-              tramiteId
-            ).padStart(5, "0")}`;
-
-            db.run(
-              `UPDATE tramites SET codigo_tramite = ? WHERE id = ?`,
-              [codigoTramite, tramiteId],
-              (errorCodigo) => {
-                if (errorCodigo) {
-                  db.run("ROLLBACK");
-                  return res.status(500).json({
-                    mensaje: "Error al generar código del trámite",
-                  });
-                }
-
-                db.run(
-                  `INSERT INTO declaraciones
-                   (
-                    tramite_id,
-                    transporta_alimentos,
-                    transporta_vegetales,
-                    transporta_animales,
-                    dinero_mayor_declarable,
-                    observaciones
-                   )
-                   VALUES (?, ?, ?, ?, ?, ?)`,
-                  [
-                    tramiteId,
-                    declaracionNormalizada.transporta_alimentos,
-                    declaracionNormalizada.transporta_vegetales,
-                    declaracionNormalizada.transporta_animales,
-                    declaracionNormalizada.dinero_mayor_declarable,
-                    declaracionNormalizada.observaciones,
-                  ],
-                  (errorDeclaracion) => {
-                    if (errorDeclaracion) {
-                      db.run("ROLLBACK");
-                      return res.status(500).json({
-                        mensaje: "Error al guardar declaración",
-                      });
-                    }
-
-                    if (riesgo.nivel !== "VERDE") {
-                      db.run(
-                        `INSERT INTO alertas
-                         (tramite_id, tipo, prioridad, mensaje)
-                         VALUES (?, ?, ?, ?)`,
-                        [
-                          tramiteId,
-                          "RIESGO_AUTOMATICO",
-                          riesgo.nivel === "ROJO" ? "ALTA" : "MEDIA",
-                          `${riesgo.nivel} · ${riesgo.motivos}`,
-                        ]
-                      );
-                    }
-
-                    db.run("COMMIT");
-
-                    return res.status(201).json({
-                      mensaje: "Trámite registrado correctamente",
-                      id: tramiteId,
-                      codigo_tramite: codigoTramite,
-                      riesgo,
-                    });
-                  }
-                );
-              }
-            );
-          }
-        );
-      }
+      [personaValidada.documento_numero, vehiculoValidado.patente]
     );
-  });
+
+    if (!ids) {
+      await runQuery("ROLLBACK");
+
+      return res.status(500).json({
+        mensaje: "Error al preparar trámite",
+      });
+    }
+
+    const tramiteInsert = await runQuery(
+      `INSERT INTO tramites
+       (
+        persona_id,
+        vehiculo_id,
+        usuario_id,
+        frontera,
+        motivo_viaje,
+        destino,
+        estado,
+        puntaje_riesgo,
+        nivel_riesgo,
+        motivo_riesgo,
+        accion_recomendada
+       )
+       VALUES (?, ?, ?, ?, ?, ?, 'PENDIENTE', ?, ?, ?, ?)`,
+      [
+        ids.persona_id,
+        ids.vehiculo_id,
+        usuarioId,
+        frontera || "Complejo Los Libertadores",
+        motivoViajeNormalizado,
+        destinoNormalizado,
+        riesgo.puntaje,
+        riesgo.nivel,
+        riesgo.motivos,
+        riesgo.accion,
+      ]
+    );
+
+    const tramiteId = tramiteInsert.lastID;
+    const codigoTramite = `ADU-${new Date().getFullYear()}-${String(
+      tramiteId
+    ).padStart(5, "0")}`;
+
+    await runQuery(
+      `UPDATE tramites SET codigo_tramite = ? WHERE id = ?`,
+      [codigoTramite, tramiteId]
+    );
+
+    await runQuery(
+      `INSERT INTO declaraciones
+       (
+        tramite_id,
+        transporta_alimentos,
+        transporta_vegetales,
+        transporta_animales,
+        dinero_mayor_declarable,
+        observaciones
+       )
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        tramiteId,
+        declaracionNormalizada.transporta_alimentos,
+        declaracionNormalizada.transporta_vegetales,
+        declaracionNormalizada.transporta_animales,
+        declaracionNormalizada.dinero_mayor_declarable,
+        declaracionNormalizada.observaciones,
+      ]
+    );
+
+    for (const menor of menoresNormalizados) {
+      await runQuery(
+        `INSERT INTO menores
+         (
+          tramite_id,
+          nombre,
+          apellido,
+          documento_tipo,
+          documento_numero,
+          nacionalidad,
+          fecha_nacimiento,
+          parentesco,
+          autorizacion_viaje,
+          observaciones
+         )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          tramiteId,
+          menor.nombre,
+          menor.apellido,
+          menor.documento_tipo,
+          menor.documento_numero,
+          menor.nacionalidad,
+          menor.fecha_nacimiento || "",
+          menor.parentesco,
+          menor.autorizacion_viaje || "",
+          menor.observaciones || "",
+        ]
+      );
+    }
+
+    if (riesgo.nivel !== "VERDE") {
+      await runQuery(
+        `INSERT INTO alertas
+         (tramite_id, tipo, prioridad, mensaje)
+         VALUES (?, ?, ?, ?)`,
+        [
+          tramiteId,
+          "RIESGO_AUTOMATICO",
+          riesgo.nivel === "ROJO" ? "ALTA" : "MEDIA",
+          `${riesgo.nivel} · ${riesgo.motivos}`,
+        ]
+      );
+    }
+
+    await runQuery("COMMIT");
+
+    return res.status(201).json({
+      mensaje: "Trámite registrado correctamente",
+      id: tramiteId,
+      codigo_tramite: codigoTramite,
+      riesgo,
+      menores_registrados: menoresNormalizados.length,
+    });
+  } catch (error) {
+    try {
+      await runQuery("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("Error haciendo rollback:", rollbackError.message);
+    }
+
+    console.error("Error creando trámite:", error.message);
+
+    return res.status(500).json({
+      mensaje: "Error al crear trámite",
+    });
+  }
 };
 
-const listarTramites = (req, res) => {
+const listarTramites = async (req, res) => {
   const params = [];
   let where = "";
 
@@ -595,6 +726,7 @@ const listarTramites = (req, res) => {
       t.nivel_riesgo,
       t.motivo_riesgo,
       t.accion_recomendada,
+      COALESCE(mn.menores_count, 0) AS menores_count,
       p.nombre || ' ' || p.apellido AS persona_nombre,
       p.documento_numero,
       p.nacionalidad,
@@ -614,22 +746,26 @@ const listarTramites = (req, res) => {
     INNER JOIN vehiculos v ON v.id = t.vehiculo_id
     LEFT JOIN declaraciones d ON d.tramite_id = t.id
     LEFT JOIN usuarios u ON u.id = t.usuario_id
+    LEFT JOIN (
+      SELECT tramite_id, COUNT(*) AS menores_count
+      FROM menores
+      GROUP BY tramite_id
+    ) mn ON mn.tramite_id = t.id
     ${where}
     ORDER BY t.id DESC
   `;
 
-  db.all(sql, params, (error, rows) => {
-    if (error) {
-      return res.status(500).json({
-        mensaje: "Error al listar trámites",
-      });
-    }
-
+  try {
+    const rows = await allQuery(sql, params);
     return res.json(rows);
-  });
+  } catch (error) {
+    return res.status(500).json({
+      mensaje: "Error al listar trámites",
+    });
+  }
 };
 
-const validarTramite = (req, res) => {
+const validarTramite = async (req, res) => {
   const { id } = req.params;
 
   const sql = `
@@ -648,12 +784,8 @@ const validarTramite = (req, res) => {
     WHERE t.id = ?
   `;
 
-  db.get(sql, [id], (error, row) => {
-    if (error) {
-      return res.status(500).json({
-        mensaje: "Error al buscar trámite",
-      });
-    }
+  try {
+    const row = await getQuery(sql, [id]);
 
     if (!row) {
       return res.status(404).json({
@@ -663,7 +795,7 @@ const validarTramite = (req, res) => {
 
     const resultado = generarResultado(row);
 
-    db.run(
+    await runQuery(
       `UPDATE tramites
        SET estado = ?,
            resultado_pdi = ?,
@@ -678,66 +810,56 @@ const validarTramite = (req, res) => {
         resultado.resultado_aduana,
         resultado.observaciones,
         id,
-      ],
-      (errorUpdate) => {
-        if (errorUpdate) {
-          return res.status(500).json({
-            mensaje: "Error al actualizar validación",
-          });
-        }
-
-        if (resultado.estado === "OBSERVADO") {
-          db.run(
-            `INSERT INTO alertas
-             (tramite_id, tipo, prioridad, mensaje)
-             VALUES (?, ?, ?, ?)`,
-            [id, "VALIDACION", "ALTA", resultado.observaciones]
-          );
-        }
-
-        db.run(
-          `INSERT INTO validaciones
-           (
-            tramite_id,
-            resultado_pdi,
-            resultado_sag,
-            resultado_final,
-            observaciones
-           )
-           VALUES (?, ?, ?, ?, ?)`,
-          [
-            id,
-            resultado.resultado_pdi,
-            resultado.resultado_sag,
-            resultado.estado,
-            resultado.observaciones,
-          ],
-          (errorValidacion) => {
-            if (errorValidacion) {
-              return res.status(500).json({
-                mensaje: "Error al guardar historial de validación",
-              });
-            }
-
-            registrarAccion({
-              usuario: req.usuario,
-              accion: "VALIDAR_TRAMITE",
-              modulo: "Trámites",
-              detalle: `Validó el trámite ID ${id} con estado ${resultado.estado}`,
-            });
-
-            return res.json({
-              mensaje: "Trámite validado correctamente",
-              ...resultado,
-            });
-          }
-        );
-      }
+      ]
     );
-  });
+
+    if (resultado.estado === "OBSERVADO") {
+      await runQuery(
+        `INSERT INTO alertas
+         (tramite_id, tipo, prioridad, mensaje)
+         VALUES (?, ?, ?, ?)`,
+        [id, "VALIDACION", "ALTA", resultado.observaciones]
+      );
+    }
+
+    await runQuery(
+      `INSERT INTO validaciones
+       (
+        tramite_id,
+        resultado_pdi,
+        resultado_sag,
+        resultado_final,
+        observaciones
+       )
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        id,
+        resultado.resultado_pdi,
+        resultado.resultado_sag,
+        resultado.estado,
+        resultado.observaciones,
+      ]
+    );
+
+    registrarAccion({
+      usuario: req.usuario,
+      accion: "VALIDAR_TRAMITE",
+      modulo: "Trámites",
+      detalle: `Validó el trámite ID ${id} con estado ${resultado.estado}`,
+    });
+
+    return res.json({
+      mensaje: "Trámite validado correctamente",
+      ...resultado,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      mensaje: "Error al validar trámite",
+    });
+  }
 };
 
-const obtenerDetalleTramite = (req, res) => {
+const obtenerDetalleTramite = async (req, res) => {
   const { id } = req.params;
 
   const sql = `
@@ -796,12 +918,8 @@ const obtenerDetalleTramite = (req, res) => {
     WHERE t.id = ?
   `;
 
-  db.get(sql, [id], (error, tramite) => {
-    if (error) {
-      return res.status(500).json({
-        mensaje: "Error al obtener el detalle del trámite",
-      });
-    }
+  try {
+    const tramite = await getQuery(sql, [id]);
 
     if (!tramite) {
       return res.status(404).json({
@@ -809,11 +927,38 @@ const obtenerDetalleTramite = (req, res) => {
       });
     }
 
-    return res.json(tramite);
-  });
+    const menores = await allQuery(
+      `SELECT
+        id,
+        nombre,
+        apellido,
+        documento_tipo,
+        documento_numero,
+        nacionalidad,
+        fecha_nacimiento,
+        parentesco,
+        autorizacion_viaje,
+        observaciones,
+        creado_en
+       FROM menores
+       WHERE tramite_id = ?
+       ORDER BY id ASC`,
+      [id]
+    );
+
+    return res.json({
+      ...tramite,
+      menores: menores || [],
+      menores_count: menores?.length || 0,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      mensaje: "Error al obtener el detalle del trámite",
+    });
+  }
 };
 
-const obtenerTramitePorCodigo = (req, res) => {
+const obtenerTramitePorCodigo = async (req, res) => {
   const { codigo } = req.params;
 
   if (!codigo) {
@@ -822,14 +967,17 @@ const obtenerTramitePorCodigo = (req, res) => {
     });
   }
 
-  db.get(
-    `SELECT 
+  const codigoNormalizado = codigo.trim().toUpperCase();
+
+  const sql = `
+    SELECT 
       t.id,
       t.codigo_tramite,
       t.estado,
       t.destino,
       t.frontera,
       t.nivel_riesgo,
+      COALESCE(mn.menores_count, 0) AS menores_count,
       p.nombre || ' ' || p.apellido AS persona_nombre,
       p.documento_numero,
       v.patente,
@@ -838,24 +986,36 @@ const obtenerTramitePorCodigo = (req, res) => {
     FROM tramites t
     INNER JOIN personas p ON t.persona_id = p.id
     INNER JOIN vehiculos v ON t.vehiculo_id = v.id
-    WHERE t.codigo_tramite = ?`,
-    [codigo.trim().toUpperCase()],
-    (error, tramite) => {
-      if (error) {
-        return res.status(500).json({
-          mensaje: "Error al buscar el trámite por código",
-        });
-      }
+    LEFT JOIN (
+      SELECT tramite_id, COUNT(*) AS menores_count
+      FROM menores
+      GROUP BY tramite_id
+    ) mn ON mn.tramite_id = t.id
+    WHERE t.codigo_tramite = ?
+  `;
 
-      if (!tramite) {
-        return res.status(404).json({
-          mensaje: "No se encontró un trámite con ese código",
-        });
-      }
+  try {
+    const tramite = await getQuery(sql, [codigoNormalizado]);
 
-      return res.json(tramite);
+    if (!tramite) {
+      return res.status(404).json({
+        mensaje: "No se encontró un trámite con ese código",
+      });
     }
-  );
+
+    registrarAccion({
+      usuario: req.usuario,
+      accion: "BUSCAR_TRAMITE_QR",
+      modulo: "QR",
+      detalle: `Buscó el trámite ${codigoNormalizado} mediante escáner o búsqueda manual.`,
+    });
+
+    return res.json(tramite);
+  } catch (error) {
+    return res.status(500).json({
+      mensaje: "Error al buscar el trámite por código",
+    });
+  }
 };
 
 module.exports = {

@@ -6,6 +6,7 @@ const limpiarRegistros = (req, res) => {
     db.run("DELETE FROM validaciones");
     db.run("DELETE FROM alertas");
     db.run("DELETE FROM declaraciones");
+    db.run("DELETE FROM menores");
     db.run("DELETE FROM tramites");
     db.run("DELETE FROM vehiculos");
     db.run("DELETE FROM personas");
@@ -13,6 +14,7 @@ const limpiarRegistros = (req, res) => {
     db.run("DELETE FROM sqlite_sequence WHERE name = 'validaciones'");
     db.run("DELETE FROM sqlite_sequence WHERE name = 'alertas'");
     db.run("DELETE FROM sqlite_sequence WHERE name = 'declaraciones'");
+    db.run("DELETE FROM sqlite_sequence WHERE name = 'menores'");
     db.run("DELETE FROM sqlite_sequence WHERE name = 'tramites'");
     db.run("DELETE FROM sqlite_sequence WHERE name = 'vehiculos'");
 
@@ -28,7 +30,7 @@ const limpiarRegistros = (req, res) => {
         accion: "LIMPIAR_REGISTROS",
         modulo: "Mantenimiento",
         detalle:
-          "Eliminó trámites, personas, vehículos, declaraciones, alertas y validaciones de prueba.",
+          "Eliminó trámites, personas, vehículos, menores acompañantes, declaraciones, alertas y validaciones de prueba.",
       });
 
       return res.json({
