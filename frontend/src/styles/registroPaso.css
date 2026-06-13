@@ -1523,3 +1523,149 @@
   }
 }
 
+/* ===== Corrección modo claro: menores y documentos ===== */
+
+.public-register-page:not(.dark-register) .minors-form-section,
+.public-register-page:not(.dark-register) .documents-form-section,
+.public-register-page:not(.dark-register) .attachments-form-section {
+  background: #ffffff !important;
+  border: 1px solid #dbeafe !important;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08) !important;
+}
+
+.public-register-page:not(.dark-register) .minors-form-section .form-section-title,
+.public-register-page:not(.dark-register) .documents-form-section .form-section-title,
+.public-register-page:not(.dark-register) .attachments-form-section .form-section-title {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.public-register-page:not(.dark-register) .minors-form-section h2,
+.public-register-page:not(.dark-register) .documents-form-section h2,
+.public-register-page:not(.dark-register) .attachments-form-section h2 {
+  color: #0f172a !important;
+}
+
+.public-register-page:not(.dark-register) .minors-section-title p,
+.public-register-page:not(.dark-register) .documents-section-title p,
+.public-register-page:not(.dark-register) .attachments-section-title p,
+.public-register-page:not(.dark-register) .documents-form-section p,
+.public-register-page:not(.dark-register) .attachments-form-section p {
+  color: #475569 !important;
+}
+
+.public-register-page:not(.dark-register) .minors-form-section label,
+.public-register-page:not(.dark-register) .documents-form-section label,
+.public-register-page:not(.dark-register) .attachments-form-section label {
+  color: #334155 !important;
+}
+
+.public-register-page:not(.dark-register) .minors-form-section input,
+.public-register-page:not(.dark-register) .minors-form-section select,
+.public-register-page:not(.dark-register) .minors-form-section textarea,
+.public-register-page:not(.dark-register) .documents-form-section input,
+.public-register-page:not(.dark-register) .documents-form-section select,
+.public-register-page:not(.dark-register) .documents-form-section textarea,
+.public-register-page:not(.dark-register) .attachments-form-section input,
+.public-register-page:not(.dark-register) .attachments-form-section select,
+.public-register-page:not(.dark-register) .attachments-form-section textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.public-register-page:not(.dark-register) .minors-form-section input::placeholder,
+.public-register-page:not(.dark-register) .minors-form-section textarea::placeholder,
+.public-register-page:not(.dark-register) .documents-form-section input::placeholder,
+.public-register-page:not(.dark-register) .documents-form-section textarea::placeholder,
+.public-register-page:not(.dark-register) .attachments-form-section input::placeholder,
+.public-register-page:not(.dark-register) .attachments-form-section textarea::placeholder {
+  color: #64748b !important;
+}
+
+.public-register-page:not(.dark-register) .minor-empty-register,
+.public-register-page:not(.dark-register) .document-empty-register,
+.public-register-page:not(.dark-register) .documents-empty-register,
+.public-register-page:not(.dark-register) .attached-empty-register {
+  background: #f8fafc !important;
+  border: 1px dashed #bfdbfe !important;
+  color: #334155 !important;
+}
+
+.public-register-page:not(.dark-register) .minor-empty-register p,
+.public-register-page:not(.dark-register) .document-empty-register p,
+.public-register-page:not(.dark-register) .documents-empty-register p,
+.public-register-page:not(.dark-register) .attached-empty-register p {
+  color: #334155 !important;
+}
+
+.public-register-page:not(.dark-register) .minor-register-card,
+.public-register-page:not(.dark-register) .document-register-card,
+.public-register-page:not(.dark-register) .documents-register-card,
+.public-register-page:not(.dark-register) .attached-document-card {
+  background: #f8fafc !important;
+  border: 1px solid #dbeafe !important;
+}
+
+.public-register-page:not(.dark-register) .minor-register-header,
+.public-register-page:not(.dark-register) .document-register-header,
+.public-register-page:not(.dark-register) .documents-register-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.public-register-page:not(.dark-register) .minor-register-header span,
+.public-register-page:not(.dark-register) .document-register-header span,
+.public-register-page:not(.dark-register) .documents-register-header span {
+  color: #2563eb !important;
+}
+
+.public-register-page:not(.dark-register) .minor-register-header strong,
+.public-register-page:not(.dark-register) .document-register-header strong,
+.public-register-page:not(.dark-register) .documents-register-header strong {
+  color: #0f172a !important;
+}
+
+.public-register-page:not(.dark-register) .secondary-action-btn,
+.public-register-page:not(.dark-register) .document-upload-btn,
+.public-register-page:not(.dark-register) .upload-document-btn {
+  background: #eff6ff !important;
+  border: 1px solid #93c5fd !important;
+  color: #1e3a8a !important;
+}
+
+.public-register-page:not(.dark-register) .secondary-action-btn:hover,
+.public-register-page:not(.dark-register) .document-upload-btn:hover,
+.public-register-page:not(.dark-register) .upload-document-btn:hover {
+  background: #dbeafe !important;
+}
+
+.public-register-page:not(.dark-register) .document-upload-box,
+.public-register-page:not(.dark-register) .document-drop-zone,
+.public-register-page:not(.dark-register) .upload-zone,
+.public-register-page:not(.dark-register) .file-upload-box {
+  background: #f8fafc !important;
+  border: 1px dashed #93c5fd !important;
+  color: #1e3a8a !important;
+}
+
+.public-register-page:not(.dark-register) .document-upload-box strong,
+.public-register-page:not(.dark-register) .document-upload-box p,
+.public-register-page:not(.dark-register) .document-drop-zone strong,
+.public-register-page:not(.dark-register) .document-drop-zone p,
+.public-register-page:not(.dark-register) .upload-zone strong,
+.public-register-page:not(.dark-register) .upload-zone p,
+.public-register-page:not(.dark-register) .file-upload-box strong,
+.public-register-page:not(.dark-register) .file-upload-box p {
+  color: #1e3a8a !important;
+}
+
+.public-register-page:not(.dark-register) .remove-minor-btn,
+.public-register-page:not(.dark-register) .remove-document-btn {
+  background: #fee2e2 !important;
+  border: 1px solid #fecaca !important;
+  color: #991b1b !important;
+}
+
+.public-register-page:not(.dark-register) .remove-minor-btn:hover,
+.public-register-page:not(.dark-register) .remove-document-btn:hover {
+  background: #fecaca !important;
+}
