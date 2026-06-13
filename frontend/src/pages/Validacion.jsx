@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardCheck, RefreshCcw, Search } from "lucide-react";
+import { ClipboardCheck, Download, RefreshCcw, Search } from "lucide-react";
+import { exportarCSV } from "../utils/exportarCSV";
 import api from "../api/api";
 import Layout from "../components/Layout";
 
@@ -72,6 +73,23 @@ function Validacion() {
     });
   }, [tramites, filtros]);
 
+  const exportarTramites = () => {
+    const datosExportar = tramitesFiltrados.map((t) => ({
+      codigo: t.codigo_tramite || `#${t.id}`,
+      persona: t.persona_nombre || "",
+      documento: t.documento_numero || "",
+      vehiculo: t.patente || "",
+      destino: t.destino || "",
+      riesgo: t.nivel_riesgo || "VERDE",
+      puntaje: t.puntaje_riesgo ?? 0,
+      estado: t.estado || "",
+      accion_recomendada: t.accion_recomendada || "",
+    }));
+
+    exportarCSV("reporte-validaciones-aduanas", datosExportar);
+  };
+
+
   const validar = async (id) => {
     setMensaje("");
 
@@ -97,7 +115,15 @@ function Validacion() {
             <p className="eyebrow">Revisión operativa</p>
             <h2>Trámites pendientes y observados</h2>
           </div>
-          <ClipboardCheck size={26} />
+          
+          <div className="section-actions">
+            <button type="button" className="export-btn" onClick={exportarTramites}>
+              <Download size={18} />
+              Exportar CSV
+            </button>
+          
+            <ClipboardCheck size={26} />
+          </div>
         </div>
 
         <div className="validation-filters">

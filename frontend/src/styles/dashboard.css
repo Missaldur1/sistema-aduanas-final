@@ -384,3 +384,47 @@
     border-radius: 14px;
   }
 }
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.export-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.export-btn:hover {
+  background: #dbeafe;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.14);
+}
+
+.export-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .section-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .export-btn {
+    width: 100%;
+  }
+}

@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Car, CheckCircle2, Clock3, FileText, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Car,
+  CheckCircle2,
+  Clock3,
+  Download,
+  FileText,
+  Trash2,
+} from "lucide-react";
+import { exportarCSV } from "../utils/exportarCSV";
 import api from "../api/api";
 import Layout from "../components/Layout";
 import { getUsuario } from "../utils/auth";
@@ -20,7 +29,7 @@ function Dashboard() {
     tramites: 0,
     aprobados: 0,
     alertas: 0,
-    ultimas_alertas: []
+    ultimas_alertas: [],
   });
   const [cargando, setCargando] = useState(true);
 
@@ -30,7 +39,7 @@ function Dashboard() {
 
       const [tramitesRes, resumenRes] = await Promise.all([
         api.get("/tramites"),
-        esAdmin ? api.get("/reportes/resumen") : Promise.resolve({ data: null })
+        esAdmin ? api.get("/reportes/resumen") : Promise.resolve({ data: null }),
       ]);
 
       setTramites(tramitesRes.data);
@@ -78,7 +87,7 @@ function Dashboard() {
       ).length,
       pendientes: tramites.filter(
         (t) => t.estado === "PENDIENTE" || t.estado === "EN_REVISION"
-      ).length
+      ).length,
     };
   }, [tramites]);
 
@@ -87,14 +96,31 @@ function Dashboard() {
         { titulo: "Vehículos registrados", valor: resumen.vehiculos, icon: Car, clase: "blue" },
         { titulo: "Trámites totales", valor: resumen.tramites, icon: FileText, clase: "orange" },
         { titulo: "Aprobados", valor: resumen.aprobados, icon: CheckCircle2, clase: "green" },
-        { titulo: "Alertas abiertas", valor: resumen.alertas, icon: AlertTriangle, clase: "red" }
+        { titulo: "Alertas abiertas", valor: resumen.alertas, icon: AlertTriangle, clase: "red" },
       ]
     : [
         { titulo: "Mis trámites", valor: datosPersona.total, icon: FileText, clase: "blue" },
         { titulo: "Aprobados", valor: datosPersona.aprobados, icon: CheckCircle2, clase: "green" },
         { titulo: "Observados", valor: datosPersona.observados, icon: AlertTriangle, clase: "red" },
-        { titulo: "Pendientes", valor: datosPersona.pendientes, icon: Clock3, clase: "orange" }
+        { titulo: "Pendientes", valor: datosPersona.pendientes, icon: Clock3, clase: "orange" },
       ];
+
+  const exportarDashboard = () => {
+    const datosExportar = tramites.map((t) => ({
+      codigo: t.codigo_tramite || `#${t.id}`,
+      persona: t.persona_nombre || "",
+      documento: t.documento_numero || "",
+      vehiculo: t.patente || "",
+      marca: t.marca || "",
+      destino: t.destino || "",
+      riesgo: t.nivel_riesgo || "VERDE",
+      puntaje: t.puntaje_riesgo ?? 0,
+      estado: t.estado || "",
+      fecha: t.fecha || "",
+    }));
+
+    exportarCSV("reporte-dashboard-aduanas", datosExportar);
+  };
 
   return (
     <Layout
@@ -144,6 +170,17 @@ function Dashboard() {
               <p className="eyebrow">Flujo fronterizo</p>
               <h2>{esAdmin ? "Últimos trámites registrados" : "Mis últimos trámites"}</h2>
             </div>
+
+            {esAdmin && (
+              <div className="section-actions">
+                <button type="button" className="export-btn" onClick={exportarDashboard}>
+                  <Download size={18} />
+                  Exportar CSV
+                </button>
+
+                <FileText size={26} />
+              </div>
+            )}
           </div>
 
           <div className="responsive-table">
@@ -190,6 +227,12 @@ function Dashboard() {
                 {!tramites.length && !cargando && (
                   <tr>
                     <td colSpan="7">Aún no hay trámites registrados.</td>
+                  </tr>
+                )}
+
+                {cargando && (
+                  <tr>
+                    <td colSpan="7">Cargando trámites...</td>
                   </tr>
                 )}
               </tbody>
