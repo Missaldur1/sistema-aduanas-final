@@ -236,7 +236,7 @@ function EscanearQR() {
               ) : (
                 <button
                   type="button"
-                  className="secondary-btn qr-main-btn"
+                  className="qr-stop-btn"
                   onClick={detenerCamara}
                 >
                   <CameraOff size={18} />

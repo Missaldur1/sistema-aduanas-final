@@ -15,9 +15,9 @@ const { autenticar, autorizar } = require("../middleware/auth.middleware");
 router.post("/", crearTramite);
 
 // Rutas privadas: solo Aduana/Admin puede revisar y validar
-router.get("/", autenticar, listarTramites);
-router.get("/:id", autenticar, autorizar("ADMIN"), obtenerDetalleTramite);
+router.get("/", autenticar, autorizar("ADMIN"), listarTramites);
 router.get("/codigo/:codigo", autenticar, autorizar("ADMIN"), obtenerTramitePorCodigo);
+router.get("/:id", autenticar, autorizar("ADMIN"), obtenerDetalleTramite);
 router.patch("/:id/validar", autenticar, autorizar("ADMIN"), validarTramite);
 
 module.exports = router;

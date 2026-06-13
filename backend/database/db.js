@@ -146,7 +146,6 @@ async function crearTablas() {
 
 async function seed() {
   const adminHash = bcrypt.hashSync("admin123", 10);
-  const personaHash = bcrypt.hashSync("persona123", 10);
 
   await run(`
     INSERT OR IGNORE INTO usuarios
@@ -154,15 +153,7 @@ async function seed() {
     VALUES
     (1, 'Funcionario Aduanas', 'admin', ?, 'Aduanas Chile', 'ADMIN', '11111111-1', '+56 9 1111 1111', 'admin@aduanas.cl')
   `, [adminHash]);
-
-  await run(`
-    INSERT OR IGNORE INTO usuarios
-    (id, nombre, usuario, password_hash, institucion, rol, documento, telefono, email)
-    VALUES
-    (2, 'Persona Demo', 'persona', ?, 'Persona Natural', 'PERSONA', '22222222-2', '+56 9 2222 2222', 'persona@mail.com')
-  `, [personaHash]);
 }
-
 crearTablas()
   .then(seed)
   .catch((error) => console.error("Error preparando base de datos:", error.message));
