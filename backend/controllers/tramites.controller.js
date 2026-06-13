@@ -2,6 +2,7 @@ const db = require("../database/db");
 const calcularRiesgo = require("../utils/calcularRiesgo");
 const { buscarPersonaPrueba } = require("../utils/personasPrueba");
 const { buscarVehiculoPrueba } = require("../utils/vehiculosPrueba");
+const registrarAccion = require("../utils/registrarAccion");
 
 const limpiarTexto = (valor = "") => {
   return valor.toString().trim();
@@ -80,7 +81,13 @@ const normalizarPatente = (patente = "") => {
     .replace(/-/g, "");
 };
 
-const validarDatosTramite = ({ persona, vehiculo, declaracion, motivo_viaje, destino }) => {
+const validarDatosTramite = ({
+  persona,
+  vehiculo,
+  declaracion,
+  motivo_viaje,
+  destino,
+}) => {
   const errores = [];
 
   if (!persona) errores.push("Los datos de la persona son obligatorios.");
@@ -114,7 +121,10 @@ const validarDatosTramite = ({ persona, vehiculo, declaracion, motivo_viaje, des
     errores.push("El RUT ingresado no es válido.");
   }
 
-  if (documentoTipo !== "RUT" && !/^[A-Za-z0-9-]{5,20}$/.test(documentoNumero)) {
+  if (
+    documentoTipo !== "RUT" &&
+    !/^[A-Za-z0-9-]{5,20}$/.test(documentoNumero)
+  ) {
     errores.push("El documento debe tener entre 5 y 20 caracteres.");
   }
 
@@ -170,29 +180,54 @@ const validarDatosTramite = ({ persona, vehiculo, declaracion, motivo_viaje, des
 
 function generarResultado(row) {
   const problemas = [];
-  if (row.antecedente_penal) problemas.push("PDI: persona con antecedente registrado");
-  if (row.antecedente_vehiculo) problemas.push("Aduanas: vehículo con antecedente registrado");
-  if (row.transporta_alimentos || row.transporta_vegetales || row.transporta_animales) problemas.push("SAG: declaración requiere revisión");
-  if (row.dinero_mayor_declarable) problemas.push("Aduanas: dinero/valores requieren declaración");
+
+  if (row.antecedente_penal) {
+    problemas.push("PDI: persona con antecedente registrado");
+  }
+
+  if (row.antecedente_vehiculo) {
+    problemas.push("Aduanas: vehículo con antecedente registrado");
+  }
+
+  if (
+    row.transporta_alimentos ||
+    row.transporta_vegetales ||
+    row.transporta_animales
+  ) {
+    problemas.push("SAG: declaración requiere revisión");
+  }
+
+  if (row.dinero_mayor_declarable) {
+    problemas.push("Aduanas: dinero/valores requieren declaración");
+  }
 
   return {
     estado: problemas.length ? "OBSERVADO" : "APROBADO",
     resultado_pdi: row.antecedente_penal ? "OBSERVADO" : "APROBADO",
-    resultado_sag: (row.transporta_alimentos || row.transporta_vegetales || row.transporta_animales) ? "OBSERVADO" : "APROBADO",
-    resultado_aduana: (row.antecedente_vehiculo || row.dinero_mayor_declarable) ? "OBSERVADO" : "APROBADO",
-    observaciones: problemas.length ? problemas.join(" | ") : "Sin observaciones"
+    resultado_sag:
+      row.transporta_alimentos ||
+      row.transporta_vegetales ||
+      row.transporta_animales
+        ? "OBSERVADO"
+        : "APROBADO",
+    resultado_aduana:
+      row.antecedente_vehiculo || row.dinero_mayor_declarable
+        ? "OBSERVADO"
+        : "APROBADO",
+    observaciones: problemas.length ? problemas.join(" | ") : "Sin observaciones",
   };
 }
 
 const crearTramite = (req, res) => {
-  const { persona, vehiculo, declaracion, motivo_viaje, destino, frontera } = req.body;
+  const { persona, vehiculo, declaracion, motivo_viaje, destino, frontera } =
+    req.body;
 
   const erroresValidacion = validarDatosTramite(req.body);
 
   if (erroresValidacion.length) {
     return res.status(400).json({
       mensaje: "Existen datos inválidos en el registro.",
-      errores: erroresValidacion
+      errores: erroresValidacion,
     });
   }
 
@@ -203,11 +238,14 @@ const crearTramite = (req, res) => {
     nombre: limpiarTexto(persona.nombre),
     apellido: limpiarTexto(persona.apellido),
     documento_tipo: limpiarTexto(persona.documento_tipo),
-    documento_numero: normalizarDocumento(persona.documento_tipo, persona.documento_numero),
+    documento_numero: normalizarDocumento(
+      persona.documento_tipo,
+      persona.documento_numero
+    ),
     nacionalidad: limpiarTexto(persona.nacionalidad),
     fecha_nacimiento: limpiarTexto(persona.fecha_nacimiento),
     telefono: limpiarTexto(persona.telefono),
-    email: limpiarTexto(persona.email)
+    email: limpiarTexto(persona.email),
   };
 
   const vehiculoNormalizado = {
@@ -220,7 +258,7 @@ const crearTramite = (req, res) => {
     anio: vehiculo.anio ? Number(vehiculo.anio) : "",
     color: limpiarTexto(vehiculo.color),
     chasis: limpiarTexto(vehiculo.chasis),
-    motor: limpiarTexto(vehiculo.motor)
+    motor: limpiarTexto(vehiculo.motor),
   };
 
   const declaracionNormalizada = {
@@ -228,7 +266,7 @@ const crearTramite = (req, res) => {
     transporta_vegetales: declaracion?.transporta_vegetales ? 1 : 0,
     transporta_animales: declaracion?.transporta_animales ? 1 : 0,
     dinero_mayor_declarable: declaracion?.dinero_mayor_declarable ? 1 : 0,
-    observaciones: limpiarTexto(declaracion?.observaciones)
+    observaciones: limpiarTexto(declaracion?.observaciones),
   };
 
   const personaPrueba = buscarPersonaPrueba(personaNormalizada.documento_numero);
@@ -237,29 +275,49 @@ const crearTramite = (req, res) => {
   const personaValidada = {
     ...personaNormalizada,
     antecedente_penal: personaPrueba?.tiene_antecedentes || false,
-    detalle_antecedente: personaPrueba?.detalle || ""
+    detalle_antecedente: personaPrueba?.detalle || "",
   };
 
   const vehiculoValidado = {
     ...vehiculoNormalizado,
     antecedente_vehiculo: vehiculoPrueba?.tiene_alerta || false,
-    detalle_antecedente: vehiculoPrueba?.detalle || ""
+    detalle_antecedente: vehiculoPrueba?.detalle || "",
   };
 
   const motivoViajeNormalizado = limpiarTexto(motivo_viaje);
   const destinoNormalizado = limpiarTexto(destino);
 
-  const riesgo = calcularRiesgo(personaValidada, vehiculoValidado, declaracionNormalizada);
+  const riesgo = calcularRiesgo(
+    personaValidada,
+    vehiculoValidado,
+    declaracionNormalizada
+  );
 
-  const personaCampos = ["nombre", "apellido", "documento_tipo", "documento_numero", "nacionalidad"];
+  const personaCampos = [
+    "nombre",
+    "apellido",
+    "documento_tipo",
+    "documento_numero",
+    "nacionalidad",
+  ];
+
   const vehiculoCampos = ["tipo", "patente", "pais_origen", "marca", "modelo"];
-  const faltantesPersona = personaCampos.filter((campo) => !personaValidada[campo]);
-  const faltantesVehiculo = vehiculoCampos.filter((campo) => !vehiculoValidado[campo]);
+
+  const faltantesPersona = personaCampos.filter(
+    (campo) => !personaValidada[campo]
+  );
+
+  const faltantesVehiculo = vehiculoCampos.filter(
+    (campo) => !vehiculoValidado[campo]
+  );
 
   if (faltantesPersona.length || faltantesVehiculo.length) {
     return res.status(400).json({
       mensaje: "Faltan datos obligatorios",
-      faltantes: [...faltantesPersona.map((c) => `persona.${c}`), ...faltantesVehiculo.map((c) => `vehiculo.${c}`)]
+      faltantes: [
+        ...faltantesPersona.map((campo) => `persona.${campo}`),
+        ...faltantesVehiculo.map((campo) => `vehiculo.${campo}`),
+      ],
     });
   }
 
@@ -268,7 +326,19 @@ const crearTramite = (req, res) => {
 
     db.run(
       `INSERT OR IGNORE INTO personas
-       (usuario_id, nombre, apellido, documento_tipo, documento_numero, nacionalidad, fecha_nacimiento, telefono, email, antecedente_penal, detalle_antecedente)
+       (
+        usuario_id,
+        nombre,
+        apellido,
+        documento_tipo,
+        documento_numero,
+        nacionalidad,
+        fecha_nacimiento,
+        telefono,
+        email,
+        antecedente_penal,
+        detalle_antecedente
+       )
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         usuarioId,
@@ -281,13 +351,20 @@ const crearTramite = (req, res) => {
         personaValidada.telefono || "",
         personaValidada.email || "",
         personaValidada.antecedente_penal ? 1 : 0,
-        personaValidada.detalle_antecedente || ""
+        personaValidada.detalle_antecedente || "",
       ]
     );
+
     db.run(
       `UPDATE personas SET
-        nombre = ?, apellido = ?, nacionalidad = ?, fecha_nacimiento = ?, telefono = ?, email = ?,
-        antecedente_penal = ?, detalle_antecedente = ?
+        nombre = ?,
+        apellido = ?,
+        nacionalidad = ?,
+        fecha_nacimiento = ?,
+        telefono = ?,
+        email = ?,
+        antecedente_penal = ?,
+        detalle_antecedente = ?
        WHERE documento_numero = ?`,
       [
         personaValidada.nombre,
@@ -298,13 +375,26 @@ const crearTramite = (req, res) => {
         personaValidada.email || "",
         personaValidada.antecedente_penal ? 1 : 0,
         personaValidada.detalle_antecedente || "",
-        personaValidada.documento_numero
+        personaValidada.documento_numero,
       ]
     );
 
     db.run(
       `INSERT OR IGNORE INTO vehiculos
-       (usuario_id, tipo, patente, pais_origen, marca, modelo, anio, color, chasis, motor, antecedente_vehiculo, detalle_antecedente)
+       (
+        usuario_id,
+        tipo,
+        patente,
+        pais_origen,
+        marca,
+        modelo,
+        anio,
+        color,
+        chasis,
+        motor,
+        antecedente_vehiculo,
+        detalle_antecedente
+       )
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         usuarioId,
@@ -318,14 +408,22 @@ const crearTramite = (req, res) => {
         vehiculoValidado.chasis || "",
         vehiculoValidado.motor || "",
         vehiculoValidado.antecedente_vehiculo ? 1 : 0,
-        vehiculoValidado.detalle_antecedente || ""
+        vehiculoValidado.detalle_antecedente || "",
       ]
     );
 
     db.run(
       `UPDATE vehiculos SET
-        tipo = ?, pais_origen = ?, marca = ?, modelo = ?, anio = ?, color = ?, chasis = ?, motor = ?,
-        antecedente_vehiculo = ?, detalle_antecedente = ?
+        tipo = ?,
+        pais_origen = ?,
+        marca = ?,
+        modelo = ?,
+        anio = ?,
+        color = ?,
+        chasis = ?,
+        motor = ?,
+        antecedente_vehiculo = ?,
+        detalle_antecedente = ?
        WHERE patente = ?`,
       [
         vehiculoValidado.tipo,
@@ -338,19 +436,25 @@ const crearTramite = (req, res) => {
         vehiculoValidado.motor || "",
         vehiculoValidado.antecedente_vehiculo ? 1 : 0,
         vehiculoValidado.detalle_antecedente || "",
-        vehiculoValidado.patente
+        vehiculoValidado.patente,
       ]
     );
 
     db.get(
-      `SELECT p.id AS persona_id, v.id AS vehiculo_id, p.antecedente_penal, v.antecedente_vehiculo
+      `SELECT 
+        p.id AS persona_id,
+        v.id AS vehiculo_id,
+        p.antecedente_penal,
+        v.antecedente_vehiculo
        FROM personas p, vehiculos v
        WHERE p.documento_numero = ? AND v.patente = ?`,
       [personaValidada.documento_numero, vehiculoValidado.patente],
       (error, ids) => {
         if (error || !ids) {
           db.run("ROLLBACK");
-          return res.status(500).json({ mensaje: "Error al preparar trámite" });
+          return res.status(500).json({
+            mensaje: "Error al preparar trámite",
+          });
         }
 
         db.run(
@@ -379,60 +483,83 @@ const crearTramite = (req, res) => {
             riesgo.puntaje,
             riesgo.nivel,
             riesgo.motivos,
-            riesgo.accion
+            riesgo.accion,
           ],
           function (errorTramite) {
             if (errorTramite) {
               db.run("ROLLBACK");
-              return res.status(500).json({ mensaje: "Error al crear trámite" });
+              return res.status(500).json({
+                mensaje: "Error al crear trámite",
+              });
             }
 
             const tramiteId = this.lastID;
-            const codigoTramite = `ADU-${new Date().getFullYear()}-${String(tramiteId).padStart(5, "0")}`;
+            const codigoTramite = `ADU-${new Date().getFullYear()}-${String(
+              tramiteId
+            ).padStart(5, "0")}`;
 
             db.run(
               `UPDATE tramites SET codigo_tramite = ? WHERE id = ?`,
-              [codigoTramite, tramiteId]
-            );
-            db.run(
-              `INSERT INTO declaraciones
-               (tramite_id, transporta_alimentos, transporta_vegetales, transporta_animales, dinero_mayor_declarable, observaciones)
-               VALUES (?, ?, ?, ?, ?, ?)`,
-              [
-                tramiteId,
-                declaracionNormalizada.transporta_alimentos,
-                declaracionNormalizada.transporta_vegetales,
-                declaracionNormalizada.transporta_animales,
-                declaracionNormalizada.dinero_mayor_declarable,
-                declaracionNormalizada.observaciones
-              ],
-              (errorDeclaracion) => {
-                if (errorDeclaracion) {
+              [codigoTramite, tramiteId],
+              (errorCodigo) => {
+                if (errorCodigo) {
                   db.run("ROLLBACK");
-                  return res.status(500).json({ mensaje: "Error al guardar declaración" });
+                  return res.status(500).json({
+                    mensaje: "Error al generar código del trámite",
+                  });
                 }
 
-                if (riesgo.nivel !== "VERDE") {
-                  db.run(
-                    `INSERT INTO alertas (tramite_id, tipo, prioridad, mensaje)
-                     VALUES (?, ?, ?, ?)`,
-                    [
-                      tramiteId,
-                      "RIESGO_AUTOMATICO",
-                      riesgo.nivel === "ROJO" ? "ALTA" : "MEDIA",
-                      `${riesgo.nivel} · ${riesgo.motivos}`
-                    ]
-                  );
-                }
+                db.run(
+                  `INSERT INTO declaraciones
+                   (
+                    tramite_id,
+                    transporta_alimentos,
+                    transporta_vegetales,
+                    transporta_animales,
+                    dinero_mayor_declarable,
+                    observaciones
+                   )
+                   VALUES (?, ?, ?, ?, ?, ?)`,
+                  [
+                    tramiteId,
+                    declaracionNormalizada.transporta_alimentos,
+                    declaracionNormalizada.transporta_vegetales,
+                    declaracionNormalizada.transporta_animales,
+                    declaracionNormalizada.dinero_mayor_declarable,
+                    declaracionNormalizada.observaciones,
+                  ],
+                  (errorDeclaracion) => {
+                    if (errorDeclaracion) {
+                      db.run("ROLLBACK");
+                      return res.status(500).json({
+                        mensaje: "Error al guardar declaración",
+                      });
+                    }
 
-                db.run("COMMIT");
+                    if (riesgo.nivel !== "VERDE") {
+                      db.run(
+                        `INSERT INTO alertas
+                         (tramite_id, tipo, prioridad, mensaje)
+                         VALUES (?, ?, ?, ?)`,
+                        [
+                          tramiteId,
+                          "RIESGO_AUTOMATICO",
+                          riesgo.nivel === "ROJO" ? "ALTA" : "MEDIA",
+                          `${riesgo.nivel} · ${riesgo.motivos}`,
+                        ]
+                      );
+                    }
 
-                res.status(201).json({
-                  mensaje: "Trámite registrado correctamente",
-                  id: tramiteId,
-                  codigo_tramite: codigoTramite,
-                  riesgo
-                });
+                    db.run("COMMIT");
+
+                    return res.status(201).json({
+                      mensaje: "Trámite registrado correctamente",
+                      id: tramiteId,
+                      codigo_tramite: codigoTramite,
+                      riesgo,
+                    });
+                  }
+                );
               }
             );
           }
@@ -446,7 +573,7 @@ const listarTramites = (req, res) => {
   const params = [];
   let where = "";
 
-  if (req.usuario.rol === "PERSONA") {
+  if (req.usuario?.rol === "PERSONA") {
     where = "WHERE t.usuario_id = ?";
     params.push(req.usuario.id);
   }
@@ -470,15 +597,16 @@ const listarTramites = (req, res) => {
       t.accion_recomendada,
       p.nombre || ' ' || p.apellido AS persona_nombre,
       p.documento_numero,
-      p.nacionalidad, 
+      p.nacionalidad,
       p.antecedente_penal,
-      v.patente, 
-      v.tipo AS vehiculo_tipo, 
-      v.marca, v.modelo, 
+      v.patente,
+      v.tipo AS vehiculo_tipo,
+      v.marca,
+      v.modelo,
       v.antecedente_vehiculo,
-      d.transporta_alimentos, 
-      d.transporta_vegetales, 
-      d.transporta_animales, 
+      d.transporta_alimentos,
+      d.transporta_vegetales,
+      d.transporta_animales,
       d.dinero_mayor_declarable,
       u.nombre AS registrado_por
     FROM tramites t
@@ -491,8 +619,13 @@ const listarTramites = (req, res) => {
   `;
 
   db.all(sql, params, (error, rows) => {
-    if (error) return res.status(500).json({ mensaje: "Error al listar trámites" });
-    res.json(rows);
+    if (error) {
+      return res.status(500).json({
+        mensaje: "Error al listar trámites",
+      });
+    }
+
+    return res.json(rows);
   });
 };
 
@@ -500,8 +633,14 @@ const validarTramite = (req, res) => {
   const { id } = req.params;
 
   const sql = `
-    SELECT t.*, p.antecedente_penal, v.antecedente_vehiculo,
-           d.transporta_alimentos, d.transporta_vegetales, d.transporta_animales, d.dinero_mayor_declarable
+    SELECT
+      t.*,
+      p.antecedente_penal,
+      v.antecedente_vehiculo,
+      d.transporta_alimentos,
+      d.transporta_vegetales,
+      d.transporta_animales,
+      d.dinero_mayor_declarable
     FROM tramites t
     INNER JOIN personas p ON p.id = t.persona_id
     INNER JOIN vehiculos v ON v.id = t.vehiculo_id
@@ -510,31 +649,89 @@ const validarTramite = (req, res) => {
   `;
 
   db.get(sql, [id], (error, row) => {
-    if (error) return res.status(500).json({ mensaje: "Error al buscar trámite" });
-    if (!row) return res.status(404).json({ mensaje: "Trámite no encontrado" });
+    if (error) {
+      return res.status(500).json({
+        mensaje: "Error al buscar trámite",
+      });
+    }
+
+    if (!row) {
+      return res.status(404).json({
+        mensaje: "Trámite no encontrado",
+      });
+    }
 
     const resultado = generarResultado(row);
 
     db.run(
-      `UPDATE tramites SET estado = ?, resultado_pdi = ?, resultado_sag = ?, resultado_aduana = ?, observaciones = ? WHERE id = ?`,
-      [resultado.estado, resultado.resultado_pdi, resultado.resultado_sag, resultado.resultado_aduana, resultado.observaciones, id],
+      `UPDATE tramites
+       SET estado = ?,
+           resultado_pdi = ?,
+           resultado_sag = ?,
+           resultado_aduana = ?,
+           observaciones = ?
+       WHERE id = ?`,
+      [
+        resultado.estado,
+        resultado.resultado_pdi,
+        resultado.resultado_sag,
+        resultado.resultado_aduana,
+        resultado.observaciones,
+        id,
+      ],
       (errorUpdate) => {
-        if (errorUpdate) return res.status(500).json({ mensaje: "Error al actualizar validación" });
+        if (errorUpdate) {
+          return res.status(500).json({
+            mensaje: "Error al actualizar validación",
+          });
+        }
 
         if (resultado.estado === "OBSERVADO") {
           db.run(
-            `INSERT INTO alertas (tramite_id, tipo, prioridad, mensaje) VALUES (?, ?, ?, ?)`,
+            `INSERT INTO alertas
+             (tramite_id, tipo, prioridad, mensaje)
+             VALUES (?, ?, ?, ?)`,
             [id, "VALIDACION", "ALTA", resultado.observaciones]
           );
         }
 
         db.run(
-          `INSERT INTO validaciones (tramite_id, resultado_pdi, resultado_sag, resultado_final, observaciones)
+          `INSERT INTO validaciones
+           (
+            tramite_id,
+            resultado_pdi,
+            resultado_sag,
+            resultado_final,
+            observaciones
+           )
            VALUES (?, ?, ?, ?, ?)`,
-          [id, resultado.resultado_pdi, resultado.resultado_sag, resultado.estado, resultado.observaciones]
-        );
+          [
+            id,
+            resultado.resultado_pdi,
+            resultado.resultado_sag,
+            resultado.estado,
+            resultado.observaciones,
+          ],
+          (errorValidacion) => {
+            if (errorValidacion) {
+              return res.status(500).json({
+                mensaje: "Error al guardar historial de validación",
+              });
+            }
 
-        res.json({ mensaje: "Trámite validado correctamente", ...resultado });
+            registrarAccion({
+              usuario: req.usuario,
+              accion: "VALIDAR_TRAMITE",
+              modulo: "Trámites",
+              detalle: `Validó el trámite ID ${id} con estado ${resultado.estado}`,
+            });
+
+            return res.json({
+              mensaje: "Trámite validado correctamente",
+              ...resultado,
+            });
+          }
+        );
       }
     );
   });
@@ -602,17 +799,17 @@ const obtenerDetalleTramite = (req, res) => {
   db.get(sql, [id], (error, tramite) => {
     if (error) {
       return res.status(500).json({
-        mensaje: "Error al obtener el detalle del trámite"
+        mensaje: "Error al obtener el detalle del trámite",
       });
     }
 
     if (!tramite) {
       return res.status(404).json({
-        mensaje: "Trámite no encontrado"
+        mensaje: "Trámite no encontrado",
       });
     }
 
-    res.json(tramite);
+    return res.json(tramite);
   });
 };
 
@@ -621,7 +818,7 @@ const obtenerTramitePorCodigo = (req, res) => {
 
   if (!codigo) {
     return res.status(400).json({
-      mensaje: "Código de trámite requerido"
+      mensaje: "Código de trámite requerido",
     });
   }
 
@@ -642,17 +839,17 @@ const obtenerTramitePorCodigo = (req, res) => {
     INNER JOIN personas p ON t.persona_id = p.id
     INNER JOIN vehiculos v ON t.vehiculo_id = v.id
     WHERE t.codigo_tramite = ?`,
-    [codigo.trim()],
+    [codigo.trim().toUpperCase()],
     (error, tramite) => {
       if (error) {
         return res.status(500).json({
-          mensaje: "Error al buscar el trámite por código"
+          mensaje: "Error al buscar el trámite por código",
         });
       }
 
       if (!tramite) {
         return res.status(404).json({
-          mensaje: "No se encontró un trámite con ese código"
+          mensaje: "No se encontró un trámite con ese código",
         });
       }
 
@@ -666,5 +863,5 @@ module.exports = {
   listarTramites,
   validarTramite,
   obtenerDetalleTramite,
-  obtenerTramitePorCodigo
+  obtenerTramitePorCodigo,
 };

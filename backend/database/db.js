@@ -142,6 +142,19 @@ async function crearTablas() {
       FOREIGN KEY (tramite_id) REFERENCES tramites(id)
     )
   `);
+
+  await run(`
+    CREATE TABLE IF NOT EXISTS historial_acciones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario_id INTEGER,
+      usuario_nombre TEXT,
+      accion TEXT NOT NULL,
+      modulo TEXT NOT NULL,
+      detalle TEXT DEFAULT '',
+      fecha TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    )
+  `);
 }
 
 async function seed() {

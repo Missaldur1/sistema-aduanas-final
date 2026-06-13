@@ -1,5 +1,15 @@
-import { useEffect, useState } from "react";
-import { CheckCircle2, ClipboardList, Moon, ShieldCheck, Sun } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ClipboardList,
+  Copy,
+  Download,
+  Moon,
+  Printer,
+  ShieldCheck,
+  Sun
+} from "lucide-react";
 import api from "../api/api";
 import Layout from "../components/Layout";
 import { QRCodeSVG } from "qrcode.react";
@@ -108,6 +118,9 @@ function RegistroPaso({ publico = false }) {
   const [cargando, setCargando] = useState(false);
   const [comprobante, setComprobante] = useState(null);
   const [camposFaltantes, setCamposFaltantes] = useState({});
+
+  const comprobanteRef = useRef(null);
+  const [mensajeComprobante, setMensajeComprobante] = useState("");
 
   const cambiarModo = () => {
     const nuevoModo = !modoOscuro;
@@ -538,6 +551,7 @@ function RegistroPaso({ publico = false }) {
 
     setCamposFaltantes({});
     setComprobante(null);
+    setMensajeComprobante("");
 
     setMensaje({
       tipo: "ok",
@@ -552,6 +566,7 @@ function RegistroPaso({ publico = false }) {
   const volverAlFormulario = () => {
     setComprobante(null);
     setMensaje(null);
+    setMensajeComprobante("");
     setCamposFaltantes({});
 
     window.scrollTo({
@@ -560,9 +575,185 @@ function RegistroPaso({ publico = false }) {
     });
   };
 
+  const escaparHTML = (texto = "") => {
+    return String(texto)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  const copiarCodigoComprobante = async () => {
+    if (!comprobante?.codigo) return;
+
+    try {
+      await navigator.clipboard.writeText(comprobante.codigo);
+      setMensajeComprobante("Código copiado correctamente.");
+    } catch (error) {
+      const inputTemporal = document.createElement("textarea");
+      inputTemporal.value = comprobante.codigo;
+      document.body.appendChild(inputTemporal);
+      inputTemporal.select();
+      document.execCommand("copy");
+      inputTemporal.remove();
+
+      setMensajeComprobante("Código copiado correctamente.");
+    }
+  };
+
+  const imprimirComprobante = () => {
+    window.print();
+  };
+
+  const descargarComprobante = () => {
+    if (!comprobante) return;
+
+    const qrSvg =
+      comprobanteRef.current?.querySelector(".qr-box svg")?.outerHTML || "";
+
+    const contenido = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Comprobante ${escaparHTML(comprobante.codigo)}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 32px;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .comprobante {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px;
+      border-radius: 24px;
+      background: #ffffff;
+      border: 1px solid #dbeafe;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 36px;
+      color: #0f172a;
+    }
+
+    p {
+      margin: 0 0 16px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .data {
+      display: grid;
+      gap: 8px;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .qr {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid #dbeafe;
+      background: #ffffff;
+    }
+
+    .footer {
+      max-width: 760px;
+      margin: 18px auto 0;
+      color: #64748b;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 18px;
+      }
+
+      .comprobante {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      .comprobante {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="comprobante">
+    <div>
+      <p class="eyebrow">Comprobante digital</p>
+      <h1>${escaparHTML(comprobante.codigo)}</h1>
+      <p>Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.</p>
+
+      <div class="data">
+        <span>Fecha: ${escaparHTML(comprobante.fecha)}</span>
+        <span>Estado: En revisión aduanera</span>
+        <span>Sistema: Aduanas Chile</span>
+        <span>Frontera: Complejo Los Libertadores</span>
+      </div>
+    </div>
+
+    <div class="qr">
+      ${qrSvg}
+    </div>
+  </section>
+
+  <p class="footer">
+    Este comprobante fue generado por el Sistema Informático Integrado para Aduanas.
+  </p>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([contenido], {
+      type: "text/html;charset=utf-8"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `comprobante-${comprobante.codigo}.html`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    setMensajeComprobante("Comprobante descargado correctamente.");
+  };
+
   const enviar = async (e) => {
     e.preventDefault();
     setMensaje(null);
+    setMensajeComprobante("");
     setComprobante(null);
 
     const formularioValido = validarFormulario();
@@ -633,7 +824,7 @@ function RegistroPaso({ publico = false }) {
 
   const comprobanteDigital = (
     <section className="comprobante-only-page">
-      <section className="qr-ticket-card">
+      <section className="qr-ticket-card printable-comprobante" ref={comprobanteRef}>
         <div className="qr-ticket-info">
           <p className="eyebrow">Comprobante digital</p>
           <h3>{comprobante?.codigo}</h3>
@@ -657,13 +848,50 @@ function RegistroPaso({ publico = false }) {
         </div>
       </section>
 
-      <button
-        type="button"
-        className="primary-btn submit-btn volver-formulario-btn"
-        onClick={volverAlFormulario}
-      >
-        Volver al formulario
-      </button>
+      {mensajeComprobante && (
+        <div className="comprobante-feedback">
+          <CheckCircle2 size={18} />
+          {mensajeComprobante}
+        </div>
+      )}
+
+      <div className="comprobante-actions">
+        <button
+          type="button"
+          className="comprobante-action-btn"
+          onClick={copiarCodigoComprobante}
+        >
+          <Copy size={18} />
+          Copiar código
+        </button>
+
+        <button
+          type="button"
+          className="comprobante-action-btn"
+          onClick={imprimirComprobante}
+        >
+          <Printer size={18} />
+          Imprimir
+        </button>
+
+        <button
+          type="button"
+          className="comprobante-action-btn"
+          onClick={descargarComprobante}
+        >
+          <Download size={18} />
+          Descargar
+        </button>
+
+        <button
+          type="button"
+          className="comprobante-action-btn comprobante-back-btn"
+          onClick={volverAlFormulario}
+        >
+          <ArrowLeft size={18} />
+          Volver al formulario
+        </button>
+      </div>
     </section>
   );
 
