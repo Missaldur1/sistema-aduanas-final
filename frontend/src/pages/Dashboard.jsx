@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AlertTriangle, Car, CheckCircle2, Clock3, FileText, Trash2 } from "lucide-react";
 import api from "../api/api";
 import Layout from "../components/Layout";
@@ -155,6 +156,7 @@ function Dashboard() {
                   <th>Destino</th>
                   <th>Riesgo</th>
                   <th>Estado</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
 
@@ -177,12 +179,17 @@ function Dashboard() {
                         {t.estado}
                       </span>
                     </td>
+                    <td>
+                      <Link to={`/tramites/${t.id}`} className="detail-btn">
+                        Ver detalle
+                      </Link>
+                    </td>
                   </tr>
                 ))}
 
                 {!tramites.length && !cargando && (
                   <tr>
-                    <td colSpan="6">Aún no hay trámites registrados.</td>
+                    <td colSpan="7">Aún no hay trámites registrados.</td>
                   </tr>
                 )}
               </tbody>
