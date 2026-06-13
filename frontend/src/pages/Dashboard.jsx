@@ -104,6 +104,7 @@ function Dashboard() {
         { titulo: "Observados", valor: datosPersona.observados, icon: AlertTriangle, clase: "red" },
         { titulo: "Pendientes", valor: datosPersona.pendientes, icon: Clock3, clase: "orange" },
       ];
+  const tramitesRecientes = tramites.slice(0, 8);
 
   const exportarDashboard = () => {
     const datosExportar = tramites.map((t) => ({
@@ -171,7 +172,7 @@ function Dashboard() {
               <h2>{esAdmin ? "Últimos trámites registrados" : "Mis últimos trámites"}</h2>
             </div>
           </div>
-                
+
           {esAdmin && (
             <div className="dashboard-export-row">
               <button type="button" className="export-btn dashboard-export-btn" onClick={exportarDashboard}>
@@ -181,7 +182,7 @@ function Dashboard() {
             </div>
           )}
 
-          <div className="responsive-table">
+          <div className="responsive-table dashboard-desktop-table">
             <table>
               <thead>
                 <tr>
@@ -194,9 +195,9 @@ function Dashboard() {
                   <th>Acción</th>
                 </tr>
               </thead>
-
+                  
               <tbody>
-                {tramites.slice(0, 8).map((t) => (
+                {tramitesRecientes.map((t) => (
                   <tr key={t.id}>
                     <td>{t.codigo_tramite || `#${t.id}`}</td>
                     <td>{t.persona_nombre}</td>
@@ -221,13 +222,13 @@ function Dashboard() {
                     </td>
                   </tr>
                 ))}
-
+          
                 {!tramites.length && !cargando && (
                   <tr>
                     <td colSpan="7">Aún no hay trámites registrados.</td>
                   </tr>
                 )}
-
+          
                 {cargando && (
                   <tr>
                     <td colSpan="7">Cargando trámites...</td>
@@ -235,6 +236,67 @@ function Dashboard() {
                 )}
               </tbody>
             </table>
+          </div>
+              
+          <div className="dashboard-mobile-list">
+            {tramitesRecientes.map((t) => (
+              <article className="mobile-tramite-card" key={t.id}>
+                <div className="mobile-tramite-top">
+                  <div>
+                    <span className="mobile-label">Código</span>
+                    <strong>{t.codigo_tramite || `#${t.id}`}</strong>
+                  </div>
+            
+                  <span className={`risk-pill ${t.nivel_riesgo?.toLowerCase()}`}>
+                    {t.nivel_riesgo || "VERDE"}
+                  </span>
+                </div>
+            
+                <div className="mobile-tramite-info">
+                  <div>
+                    <span>Persona</span>
+                    <strong>{t.persona_nombre}</strong>
+                  </div>
+            
+                  <div>
+                    <span>Vehículo</span>
+                    <strong>
+                      {t.patente} · {t.marca}
+                    </strong>
+                  </div>
+            
+                  <div>
+                    <span>Destino</span>
+                    <strong>{t.destino}</strong>
+                  </div>
+            
+                  <div>
+                    <span>Estado</span>
+                    <strong>
+                      <span className={`status-pill ${t.estado?.toLowerCase()}`}>
+                        {t.estado}
+                      </span>
+                    </strong>
+                  </div>
+                </div>
+            
+                <Link to={`/tramites/${t.id}`} className="detail-btn mobile-detail-btn">
+                  Ver detalle
+                </Link>
+              </article>
+            ))}
+          
+            {!tramites.length && !cargando && (
+              <div className="mobile-empty-message">
+                Aún no hay trámites registrados.
+              </div>
+            )}
+          
+            {cargando && (
+              <div className="mobile-empty-message">
+                Cargando trámites...
+              </div>
+            )}
           </div>
         </article>
 
