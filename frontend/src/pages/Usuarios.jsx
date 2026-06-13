@@ -82,7 +82,7 @@ function Usuarios() {
             <div><p className="eyebrow">Control de accesos</p><h2>Usuarios registrados</h2></div>
             <UsersIcon size={24} />
           </div>
-          <div className="responsive-table">
+          <div className="responsive-table usuarios-desktop-table">
             <table>
               <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Institución</th><th>Estado</th></tr></thead>
               <tbody>
@@ -97,6 +97,53 @@ function Usuarios() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="usuarios-mobile-list">
+            {usuarios.map((u) => (
+              <article className="usuario-mobile-card" key={u.id}>
+                <div className="usuario-mobile-top">
+                  <div>
+                    <span>Nombre</span>
+                    <strong>{u.nombre}</strong>
+                  </div>
+            
+                  <span className={`user-status ${u.activo ? "active" : "inactive"}`}>
+                    {u.activo ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+            
+                <div className="usuario-mobile-info">
+                  <div>
+                    <span>Usuario</span>
+                    <strong>{u.usuario}</strong>
+                  </div>
+            
+                  <div>
+                    <span>Rol</span>
+                    <strong>{u.rol}</strong>
+                  </div>
+            
+                  <div>
+                    <span>Institución</span>
+                    <strong>{u.institucion}</strong>
+                  </div>
+            
+                  {u.email && (
+                    <div>
+                      <span>Email</span>
+                      <strong>{u.email}</strong>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))}
+          
+            {!usuarios.length && (
+              <div className="usuarios-empty-mobile">
+                No hay usuarios registrados.
+              </div>
+            )}
           </div>
         </article>
       </section>
