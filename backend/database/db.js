@@ -160,12 +160,15 @@ async function crearTablas() {
 async function seed() {
   const adminHash = bcrypt.hashSync("admin123", 10);
 
-  await run(`
+  await run(
+    `
     INSERT OR IGNORE INTO usuarios
     (id, nombre, usuario, password_hash, institucion, rol, documento, telefono, email)
     VALUES
     (1, 'Funcionario Aduanas', 'admin', ?, 'Aduanas Chile', 'ADMIN', '11111111-1', '+56 9 1111 1111', 'admin@aduanas.cl')
-  `, [adminHash]);
+  `,
+    [adminHash]
+  );
 }
 crearTablas()
   .then(seed)

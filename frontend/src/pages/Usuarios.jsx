@@ -7,8 +7,8 @@ const nuevoInicial = {
   nombre: "",
   usuario: "",
   password: "",
-  rol: "PERSONA",
-  institucion: "Persona Natural",
+  rol: "ADMIN",
+  institucion: "Aduanas Chile",
   documento: "",
   telefono: "",
   email: "",
@@ -45,7 +45,7 @@ function Usuarios() {
   };
 
   return (
-    <Layout titulo="Gestión de usuarios" subtitulo="Administración de cuentas para Aduana y personas.">
+    <Layout titulo="Gestión de usuarios" subtitulo="Administración de cuentas para funcionarios de Aduana.">
       {mensaje && <div className="alert alert-success">{mensaje}</div>}
       <section className="content-grid">
         <article className="panel-card">
@@ -57,7 +57,21 @@ function Usuarios() {
             <label>Nombre<input value={nuevo.nombre} onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })} required /></label>
             <label>Usuario<input value={nuevo.usuario} onChange={(e) => setNuevo({ ...nuevo, usuario: e.target.value })} required /></label>
             <label>Contraseña<input type="password" value={nuevo.password} onChange={(e) => setNuevo({ ...nuevo, password: e.target.value })} required /></label>
-            <label>Rol<select value={nuevo.rol} onChange={(e) => setNuevo({ ...nuevo, rol: e.target.value, institucion: e.target.value === "ADMIN" ? "Aduanas Chile" : "Persona Natural" })}><option value="PERSONA">Persona</option><option value="ADMIN">Administrador Aduana</option></select></label>
+            <label>
+              Rol
+              <select
+                value={nuevo.rol}
+                onChange={(e) =>
+                  setNuevo({
+                    ...nuevo,
+                    rol: e.target.value,
+                    institucion: "Aduanas Chile",
+                  })
+                }
+              >
+                <option value="ADMIN">Administrador Aduana</option>
+              </select>
+            </label>
             <label>Email<input type="email" value={nuevo.email} onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })} /></label>
             <button className="primary-btn" type="submit">Crear usuario</button>
           </form>

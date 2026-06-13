@@ -17,8 +17,10 @@ const crearUsuario = (req, res) => {
     return res.status(400).json({ mensaje: "Nombre, usuario, contraseña y rol son obligatorios" });
   }
 
-  if (!["ADMIN", "PERSONA"].includes(rol)) {
-    return res.status(400).json({ mensaje: "Rol inválido. Use ADMIN o PERSONA" });
+  if (rol !== "ADMIN") {
+    return res.status(400).json({
+      mensaje: "Rol inválido. Solo se permite crear administradores de Aduana",
+    });
   }
 
   const hash = bcrypt.hashSync(password, 10);
@@ -26,7 +28,16 @@ const crearUsuario = (req, res) => {
   db.run(
     `INSERT INTO usuarios (nombre, usuario, password_hash, institucion, rol, documento, telefono, email)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [nombre, usuario, hash, institucion || (rol === "ADMIN" ? "Aduanas Chile" : "Persona Natural"), rol, documento || "", telefono || "", email || ""],
+    [
+      nombre,
+      usuario,
+      hash,
+      institucion || "Aduanas Chile",
+      "ADMIN",
+      documento || "",
+      telefono || "",
+      email || "",
+    ],
     function (error) {
       if (error) {
         if (String(error.message).includes("UNIQUE")) {
