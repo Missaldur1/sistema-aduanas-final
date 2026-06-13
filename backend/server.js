@@ -12,6 +12,7 @@ const tramitesRoutes = require("./routes/tramites.routes");
 const validacionesRoutes = require("./routes/validaciones.routes");
 const reportesRoutes = require("./routes/reportes.routes");
 const devRoutes = require("./routes/dev.routes");
+const historialRoutes = require("./routes/historial.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -54,6 +55,7 @@ app.use("/api/tramites", tramitesRoutes);
 app.use("/api/dev", devRoutes);
 app.use("/api/validaciones", validacionesRoutes);
 app.use("/api/reportes", reportesRoutes);
+app.use("/api/historial", historialRoutes);
 
 app.get("/", (req, res) => {
   res.json({
