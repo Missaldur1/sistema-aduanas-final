@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  ArrowLeft,
   CheckCircle2,
   ClipboardList,
+  Copy,
+  Download,
   Moon,
   Plus,
+  Printer,
   ShieldCheck,
   Sun,
   Trash2,
@@ -87,6 +91,9 @@ function RegistroPaso({ publico = false }) {
   const [cargando, setCargando] = useState(false);
   const [comprobante, setComprobante] = useState(null);
   const [camposFaltantes, setCamposFaltantes] = useState({});
+  const [mensajeComprobante, setMensajeComprobante] = useState("");
+
+  const comprobanteRef = useRef(null);
 
   const cambiarModo = () => {
     const nuevoModo = !modoOscuro;
@@ -389,13 +396,15 @@ function RegistroPaso({ publico = false }) {
     if (!apellido) {
       errores["persona.apellido"] = "El apellido es obligatorio.";
     } else if (apellido.length < 2) {
-      errores["persona.apellido"] = "El apellido debe tener al menos 2 caracteres.";
+      errores["persona.apellido"] =
+        "El apellido debe tener al menos 2 caracteres.";
     } else if (!soloLetras(apellido)) {
       errores["persona.apellido"] = "El apellido solo debe contener letras.";
     }
 
     if (!documento) {
-      errores["persona.documento_numero"] = "El número de documento es obligatorio.";
+      errores["persona.documento_numero"] =
+        "El número de documento es obligatorio.";
     } else if (
       form.persona.documento_tipo === "RUT" &&
       !validarRutChileno(documento)
@@ -413,10 +422,13 @@ function RegistroPaso({ publico = false }) {
     if (!nacionalidad) {
       errores["persona.nacionalidad"] = "La nacionalidad es obligatoria.";
     } else if (!soloLetras(nacionalidad)) {
-      errores["persona.nacionalidad"] = "La nacionalidad solo debe contener letras.";
+      errores["persona.nacionalidad"] =
+        "La nacionalidad solo debe contener letras.";
     }
 
-    const errorFechaPersona = validarFechaNacimiento(form.persona.fecha_nacimiento);
+    const errorFechaPersona = validarFechaNacimiento(
+      form.persona.fecha_nacimiento
+    );
 
     if (errorFechaPersona) {
       errores["persona.fecha_nacimiento"] = errorFechaPersona;
@@ -472,7 +484,8 @@ function RegistroPaso({ publico = false }) {
       const observacionesMenor = menor.observaciones.trim();
 
       if (!nombreMenor) {
-        errores[`menores.${index}.nombre`] = "El nombre del menor es obligatorio.";
+        errores[`menores.${index}.nombre`] =
+          "El nombre del menor es obligatorio.";
       } else if (nombreMenor.length < 2) {
         errores[`menores.${index}.nombre`] =
           "El nombre debe tener al menos 2 caracteres.";
@@ -517,7 +530,9 @@ function RegistroPaso({ publico = false }) {
           "La nacionalidad solo debe contener letras.";
       }
 
-      const errorFechaMenor = validarFechaNacimientoMenor(menor.fecha_nacimiento);
+      const errorFechaMenor = validarFechaNacimientoMenor(
+        menor.fecha_nacimiento
+      );
 
       if (errorFechaMenor) {
         errores[`menores.${index}.fecha_nacimiento`] = errorFechaMenor;
@@ -565,6 +580,7 @@ function RegistroPaso({ publico = false }) {
 
     setCamposFaltantes({});
     setComprobante(null);
+    setMensajeComprobante("");
 
     setMensaje({
       tipo: "ok",
@@ -576,6 +592,7 @@ function RegistroPaso({ publico = false }) {
     e.preventDefault();
     setMensaje(null);
     setComprobante(null);
+    setMensajeComprobante("");
 
     const formularioValido = validarFormulario();
 
@@ -604,13 +621,6 @@ function RegistroPaso({ publico = false }) {
 
       const codigo = response.data?.codigo_tramite;
 
-      setMensaje({
-        tipo: "ok",
-        texto: `${
-          response.data?.mensaje || "Trámite registrado correctamente."
-        } Código de trámite: ${codigo}. Guarda este código para consultar con Aduanas.`,
-      });
-
       setComprobante({
         id: response.data?.id,
         codigo,
@@ -618,6 +628,7 @@ function RegistroPaso({ publico = false }) {
         menores_registrados: response.data?.menores_registrados || 0,
       });
 
+      setMensaje(null);
       setForm(crearFormularioInicial());
       setCamposFaltantes({});
     } catch (error) {
@@ -631,6 +642,151 @@ function RegistroPaso({ publico = false }) {
     } finally {
       setCargando(false);
     }
+  };
+
+  const escaparHTML = (texto = "") => {
+    return String(texto)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
+  const copiarCodigoComprobante = async () => {
+    if (!comprobante?.codigo) return;
+
+    try {
+      await navigator.clipboard.writeText(comprobante.codigo);
+      setMensajeComprobante("Código copiado correctamente.");
+    } catch (error) {
+      const inputTemporal = document.createElement("textarea");
+      inputTemporal.value = comprobante.codigo;
+      document.body.appendChild(inputTemporal);
+      inputTemporal.select();
+      document.execCommand("copy");
+      inputTemporal.remove();
+
+      setMensajeComprobante("Código copiado correctamente.");
+    }
+  };
+
+  const imprimirComprobante = () => {
+    window.print();
+  };
+
+  const descargarComprobante = () => {
+    if (!comprobante) return;
+
+    const qrSvg =
+      comprobanteRef.current?.querySelector(".qr-box svg")?.outerHTML || "";
+
+    const contenido = `
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Comprobante ${escaparHTML(comprobante.codigo)}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background: #f1f5f9;
+              padding: 30px;
+              color: #0f172a;
+            }
+
+            .ticket {
+              max-width: 760px;
+              margin: 0 auto;
+              background: #ffffff;
+              border: 1px solid #dbeafe;
+              border-radius: 20px;
+              padding: 28px;
+            }
+
+            .eyebrow {
+              color: #1d4ed8;
+              font-size: 12px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+            }
+
+            h1 {
+              margin: 10px 0;
+              font-size: 34px;
+              color: #0f172a;
+            }
+
+            p {
+              line-height: 1.6;
+              color: #334155;
+            }
+
+            .data {
+              margin-top: 18px;
+              display: grid;
+              gap: 8px;
+            }
+
+            .data span {
+              padding: 10px 12px;
+              border-radius: 12px;
+              background: #eff6ff;
+              color: #1e3a8a;
+              font-weight: 700;
+            }
+
+            .qr {
+              margin-top: 24px;
+              padding: 20px;
+              border-radius: 18px;
+              background: #f8fafc;
+              display: inline-block;
+            }
+          </style>
+        </head>
+
+        <body>
+          <main class="ticket">
+            <div class="eyebrow">Comprobante digital</div>
+            <h1>${escaparHTML(comprobante.codigo)}</h1>
+
+            <p>
+              Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.
+            </p>
+
+            <div class="data">
+              <span>Fecha: ${escaparHTML(comprobante.fecha)}</span>
+              <span>Estado: En revisión aduanera</span>
+              <span>Menores registrados: ${escaparHTML(
+                comprobante.menores_registrados || 0
+              )}</span>
+            </div>
+
+            <div class="qr">
+              ${qrSvg}
+            </div>
+          </main>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob([contenido], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `comprobante-${comprobante.codigo}.html`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  const volverAlFormulario = () => {
+    setComprobante(null);
+    setMensajeComprobante("");
+    setMensaje(null);
   };
 
   const contenidoFormulario = (
@@ -682,7 +838,9 @@ function RegistroPaso({ publico = false }) {
               className={marcarCampo("persona.documento_numero")}
               value={form.persona.documento_numero}
               onChange={(e) => cambiarDocumentoPersona(e.target.value)}
-              placeholder={obtenerPlaceholderDocumento(form.persona.documento_tipo)}
+              placeholder={obtenerPlaceholderDocumento(
+                form.persona.documento_tipo
+              )}
             />
             {mostrarError("persona.documento_numero")}
           </label>
@@ -692,7 +850,9 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("persona.nacionalidad")}
               value={form.persona.nacionalidad}
-              onChange={(e) => cambiar("persona", "nacionalidad", e.target.value)}
+              onChange={(e) =>
+                cambiar("persona", "nacionalidad", e.target.value)
+              }
               placeholder="Ej: Chilena"
             />
             {mostrarError("persona.nacionalidad")}
@@ -703,7 +863,11 @@ function RegistroPaso({ publico = false }) {
             <DatePicker
               selected={convertirFechaParaInput(form.persona.fecha_nacimiento)}
               onChange={(fecha) =>
-                cambiar("persona", "fecha_nacimiento", convertirFechaParaBD(fecha))
+                cambiar(
+                  "persona",
+                  "fecha_nacimiento",
+                  convertirFechaParaBD(fecha)
+                )
               }
               dateFormat="dd/MM/yyyy"
               locale={es}
@@ -836,10 +1000,16 @@ function RegistroPaso({ publico = false }) {
                   <label>
                     Número de documento
                     <input
-                      className={marcarCampo(`menores.${index}.documento_numero`)}
+                      className={marcarCampo(
+                        `menores.${index}.documento_numero`
+                      )}
                       value={menor.documento_numero}
-                      onChange={(e) => cambiarDocumentoMenor(index, e.target.value)}
-                      placeholder={obtenerPlaceholderDocumento(menor.documento_tipo)}
+                      onChange={(e) =>
+                        cambiarDocumentoMenor(index, e.target.value)
+                      }
+                      placeholder={obtenerPlaceholderDocumento(
+                        menor.documento_tipo
+                      )}
                     />
                     {mostrarError(`menores.${index}.documento_numero`)}
                   </label>
@@ -860,7 +1030,9 @@ function RegistroPaso({ publico = false }) {
                   <label>
                     Fecha de nacimiento
                     <DatePicker
-                      selected={convertirFechaParaInput(menor.fecha_nacimiento)}
+                      selected={convertirFechaParaInput(
+                        menor.fecha_nacimiento
+                      )}
                       onChange={(fecha) =>
                         cambiarMenor(
                           index,
@@ -905,10 +1077,16 @@ function RegistroPaso({ publico = false }) {
                   <label>
                     Autorización o documento de viaje
                     <select
-                      className={marcarCampo(`menores.${index}.autorizacion_viaje`)}
+                      className={marcarCampo(
+                        `menores.${index}.autorizacion_viaje`
+                      )}
                       value={menor.autorizacion_viaje}
                       onChange={(e) =>
-                        cambiarMenor(index, "autorizacion_viaje", e.target.value)
+                        cambiarMenor(
+                          index,
+                          "autorizacion_viaje",
+                          e.target.value
+                        )
                       }
                     >
                       <option value="Presenta autorización de viaje">
@@ -928,7 +1106,9 @@ function RegistroPaso({ publico = false }) {
                   <label className="minor-observations-field">
                     Observaciones del menor
                     <textarea
-                      className={marcarCampo(`menores.${index}.observaciones`)}
+                      className={marcarCampo(
+                        `menores.${index}.observaciones`
+                      )}
                       placeholder="Ej: viaja con autorización notarial o documento adicional."
                       value={menor.observaciones}
                       onChange={(e) =>
@@ -992,7 +1172,9 @@ function RegistroPaso({ publico = false }) {
             <input
               className={marcarCampo("vehiculo.pais_origen")}
               value={form.vehiculo.pais_origen}
-              onChange={(e) => cambiar("vehiculo", "pais_origen", e.target.value)}
+              onChange={(e) =>
+                cambiar("vehiculo", "pais_origen", e.target.value)
+              }
               placeholder="Ej: Chile"
             />
             {mostrarError("vehiculo.pais_origen")}
@@ -1175,36 +1357,6 @@ function RegistroPaso({ publico = false }) {
         </div>
       )}
 
-      {comprobante && (
-        <section className="qr-ticket-card">
-          <div className="qr-ticket-info">
-            <p className="eyebrow">Comprobante digital</p>
-            <h3>{comprobante.codigo}</h3>
-            <p>
-              Guarda este código. Aduana podrá usarlo para revisar tu trámite
-              registrado.
-            </p>
-
-            <div className="qr-ticket-data">
-              <span>Fecha: {comprobante.fecha}</span>
-              <span>Estado: En revisión aduanera</span>
-              <span>
-                Menores registrados: {comprobante.menores_registrados || 0}
-              </span>
-            </div>
-          </div>
-
-          <div className="qr-box">
-            <QRCodeSVG
-              value={comprobante.codigo}
-              size={150}
-              level="H"
-              includeMargin
-            />
-          </div>
-        </section>
-      )}
-
       <button className="primary-btn submit-btn" disabled={cargando} type="submit">
         <CheckCircle2 size={19} />
         {cargando ? "Guardando..." : "Guardar registro de paso"}
@@ -1212,78 +1364,173 @@ function RegistroPaso({ publico = false }) {
     </form>
   );
 
+  const contenidoComprobante = comprobante && (
+    <section className="comprobante-only-page">
+      <section
+        className="qr-ticket-card printable-comprobante"
+        ref={comprobanteRef}
+      >
+        <div className="qr-ticket-info">
+          <p className="eyebrow">Comprobante digital</p>
+          <h3>{comprobante.codigo}</h3>
+
+          <p>
+            Guarda este código. Aduana podrá usarlo para revisar tu trámite
+            registrado.
+          </p>
+
+          <div className="qr-ticket-data">
+            <span>Fecha: {comprobante.fecha}</span>
+            <span>Estado: En revisión aduanera</span>
+            <span>
+              Menores registrados: {comprobante.menores_registrados || 0}
+            </span>
+          </div>
+        </div>
+
+        <div className="qr-box">
+          <QRCodeSVG
+            value={comprobante.codigo}
+            size={150}
+            level="H"
+            includeMargin
+          />
+        </div>
+      </section>
+
+      {mensajeComprobante && (
+        <div className="comprobante-feedback">
+          <CheckCircle2 size={18} />
+          {mensajeComprobante}
+        </div>
+      )}
+
+      <div className="comprobante-actions">
+        <button
+          type="button"
+          className="comprobante-action-btn"
+          onClick={copiarCodigoComprobante}
+        >
+          <Copy size={18} />
+          Copiar código
+        </button>
+
+        <button
+          type="button"
+          className="comprobante-action-btn"
+          onClick={imprimirComprobante}
+        >
+          <Printer size={18} />
+          Imprimir
+        </button>
+
+        <button
+          type="button"
+          className="comprobante-action-btn"
+          onClick={descargarComprobante}
+        >
+          <Download size={18} />
+          Descargar
+        </button>
+
+        <button
+          type="button"
+          className="comprobante-action-btn comprobante-back-btn"
+          onClick={volverAlFormulario}
+        >
+          <ArrowLeft size={18} />
+          Volver al formulario
+        </button>
+      </div>
+    </section>
+  );
+
   if (publico) {
     return (
       <main className={`public-register-page ${modoOscuro ? "dark-register" : ""}`}>
-        <header className="public-register-header">
-          <div>
-            <p className="eyebrow">Sistema Integrado de Gestión Aduanera</p>
-            <h1>Registro de paso fronterizo</h1>
-            <p>
-              Completa tus datos personales, información del vehículo,
-              menores acompañantes si corresponde y declaración jurada para que
-              Aduanas pueda revisar tu solicitud.
-            </p>
-          </div>
+        {comprobante ? (
+          contenidoComprobante
+        ) : (
+          <>
+            <header className="public-register-header">
+              <div>
+                <p className="eyebrow">Sistema Integrado de Gestión Aduanera</p>
+                <h1>Registro de paso fronterizo</h1>
+                <p>
+                  Completa tus datos personales, información del vehículo,
+                  menores acompañantes si corresponde y declaración jurada para
+                  que Aduanas pueda revisar tu solicitud.
+                </p>
+              </div>
 
-          <div className="public-header-actions">
-            <button type="button" className="theme-toggle-btn" onClick={cambiarModo}>
-              {modoOscuro ? <Sun size={14} /> : <Moon size={14} />}
-              {modoOscuro ? "Modo claro" : "Modo oscuro"}
-            </button>
+              <div className="public-header-actions">
+                <button
+                  type="button"
+                  className="theme-toggle-btn"
+                  onClick={cambiarModo}
+                >
+                  {modoOscuro ? <Sun size={14} /> : <Moon size={14} />}
+                  {modoOscuro ? "Modo claro" : "Modo oscuro"}
+                </button>
 
-            <a className="quick-action" href="/admin">
-              Ingreso Aduana
-            </a>
-          </div>
-        </header>
+                <a className="quick-action" href="/admin">
+                  Ingreso Aduana
+                </a>
+              </div>
+            </header>
 
-        <section className="testing-tools-card">
-          <div>
-            <p className="eyebrow">Herramientas de prueba</p>
-            <h2>Escenarios rápidos</h2>
-            <p>
-              Carga datos automáticamente para probar distintos casos de
-              validación aduanera.
-            </p>
-          </div>
-            
-          <div className="testing-tools-actions">
-            <select
-              defaultValue=""
-              onChange={(e) => {
-                const escenario = escenariosPrueba.find(
-                  (item) => item.nombre === e.target.value
-                );
-              
-                cargarEscenario(escenario);
-                e.target.value = "";
-              }}
-            >
-              <option value="" disabled>
-                Seleccionar escenario
-              </option>
-            
-              {escenariosPrueba.map((escenario) => (
-                <option key={escenario.nombre} value={escenario.nombre}>
-                  {escenario.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        </section>
+            <section className="testing-tools-card">
+              <div>
+                <p className="eyebrow">Herramientas de prueba</p>
+                <h2>Escenarios rápidos</h2>
+                <p>
+                  Carga datos automáticamente para probar distintos casos de
+                  validación aduanera.
+                </p>
+              </div>
 
-        {contenidoFormulario}
+              <div className="testing-tools-actions">
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const escenario = escenariosPrueba.find(
+                      (item) => item.nombre === e.target.value
+                    );
+
+                    cargarEscenario(escenario);
+                    e.target.value = "";
+                  }}
+                >
+                  <option value="" disabled>
+                    Seleccionar escenario
+                  </option>
+
+                  {escenariosPrueba.map((escenario) => (
+                    <option key={escenario.nombre} value={escenario.nombre}>
+                      {escenario.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </section>
+
+            {contenidoFormulario}
+          </>
+        )}
       </main>
     );
   }
 
   return (
     <Layout
-      titulo="Nuevo trámite fronterizo"
-      subtitulo="Formulario para registrar persona, vehículo, menores acompañantes y declaración jurada digital."
+      titulo={comprobante ? "Comprobante digital" : "Nuevo trámite fronterizo"}
+      subtitulo={
+        comprobante
+          ? "Registro generado correctamente."
+          : "Formulario para registrar persona, vehículo, menores acompañantes y declaración jurada digital."
+      }
     >
-      {contenidoFormulario}
+      {comprobante ? contenidoComprobante : contenidoFormulario}
     </Layout>
   );
 }
