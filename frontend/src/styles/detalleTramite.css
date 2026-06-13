@@ -66,3 +66,96 @@
 
 .admin-qr-card svg { background: #ffffff; border-radius: 14px; }
 .admin-qr-card span { color: var(--muted); font-size: 13px; font-weight: 900; }
+
+/* Menores acompañantes en detalle de trámite */
+.minors-detail-panel {
+  margin-top: 20px;
+}
+
+.minors-detail-list {
+  display: grid;
+  gap: 14px;
+}
+
+.minor-detail-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  display: grid;
+  gap: 14px;
+}
+
+.minor-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.minor-detail-header span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.minor-detail-header strong {
+  color: #0f172a;
+  font-size: 17px;
+}
+
+.minor-detail-header small {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.minor-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.minor-detail-grid p {
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #334155;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.minor-detail-grid strong {
+  color: #0f172a;
+}
+
+.minor-empty-box {
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .minor-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .minor-detail-header {
+    flex-direction: column;
+  }
+
+  .minor-detail-header small {
+    white-space: normal;
+  }
+}
