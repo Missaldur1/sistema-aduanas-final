@@ -165,23 +165,21 @@ function Dashboard() {
 
       <section className="content-grid">
         <article className="panel-card wide-card">
-          <div className="section-title">
+          <div className="section-title dashboard-section-title">
             <div>
               <p className="eyebrow">Flujo fronterizo</p>
               <h2>{esAdmin ? "Últimos trámites registrados" : "Mis últimos trámites"}</h2>
             </div>
-
-            {esAdmin && (
-              <div className="section-actions">
-                <button type="button" className="export-btn" onClick={exportarDashboard}>
-                  <Download size={18} />
-                  Exportar CSV
-                </button>
-
-                <FileText size={26} />
-              </div>
-            )}
           </div>
+                
+          {esAdmin && (
+            <div className="dashboard-export-row">
+              <button type="button" className="export-btn dashboard-export-btn" onClick={exportarDashboard}>
+                <Download size={17} />
+                Exportar CSV
+              </button>
+            </div>
+          )}
 
           <div className="responsive-table">
             <table>
