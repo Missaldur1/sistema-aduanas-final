@@ -159,3 +159,154 @@
     white-space: normal;
   }
 }
+
+/* Documentos adjuntos en detalle de trámite */
+.documents-detail-panel {
+  margin-top: 20px;
+}
+
+.documents-detail-list {
+  display: grid;
+  gap: 14px;
+}
+
+.document-detail-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  display: grid;
+  gap: 14px;
+}
+
+.document-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.document-detail-header span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.document-detail-header strong {
+  display: block;
+  color: #0f172a;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.document-detail-header small {
+  display: block;
+  margin-top: 5px;
+  color: #475569;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.document-type-pill {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.document-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.document-detail-grid p {
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #334155;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.document-detail-grid strong {
+  color: #0f172a;
+}
+
+.document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.document-action-btn {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 13px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-weight: 900;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.document-action-btn:hover {
+  background: #dbeafe;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.14);
+}
+
+.document-download-btn {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.document-download-btn:hover {
+  background: #bbf7d0;
+}
+
+.document-empty-box {
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .document-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .document-detail-header {
+    flex-direction: column;
+  }
+
+  .document-type-pill {
+    white-space: normal;
+  }
+
+  .document-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .document-action-btn {
+    width: 100%;
+  }
+}

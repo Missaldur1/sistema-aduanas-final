@@ -139,19 +139,27 @@ const validarMenores = (menores = []) => {
     const observaciones = limpiarTexto(menor.observaciones);
 
     if (nombre.length < 2) {
-      errores.push(`Menor ${numeroMenor}: el nombre debe tener al menos 2 caracteres.`);
+      errores.push(
+        `Menor ${numeroMenor}: el nombre debe tener al menos 2 caracteres.`
+      );
     }
 
     if (apellido.length < 2) {
-      errores.push(`Menor ${numeroMenor}: el apellido debe tener al menos 2 caracteres.`);
+      errores.push(
+        `Menor ${numeroMenor}: el apellido debe tener al menos 2 caracteres.`
+      );
     }
 
     if (nombre && !soloLetras(nombre)) {
-      errores.push(`Menor ${numeroMenor}: el nombre solo puede contener letras.`);
+      errores.push(
+        `Menor ${numeroMenor}: el nombre solo puede contener letras.`
+      );
     }
 
     if (apellido && !soloLetras(apellido)) {
-      errores.push(`Menor ${numeroMenor}: el apellido solo puede contener letras.`);
+      errores.push(
+        `Menor ${numeroMenor}: el apellido solo puede contener letras.`
+      );
     }
 
     if (!["RUT", "Pasaporte", "DNI"].includes(documentoTipo)) {
@@ -159,7 +167,9 @@ const validarMenores = (menores = []) => {
     }
 
     if (!documentoNumero) {
-      errores.push(`Menor ${numeroMenor}: el número de documento es obligatorio.`);
+      errores.push(
+        `Menor ${numeroMenor}: el número de documento es obligatorio.`
+      );
     }
 
     if (documentoTipo === "RUT" && !validarRutChileno(documentoNumero)) {
@@ -171,7 +181,9 @@ const validarMenores = (menores = []) => {
       documentoNumero &&
       !/^[A-Za-z0-9-]{5,20}$/.test(documentoNumero)
     ) {
-      errores.push(`Menor ${numeroMenor}: el documento debe tener entre 5 y 20 caracteres.`);
+      errores.push(
+        `Menor ${numeroMenor}: el documento debe tener entre 5 y 20 caracteres.`
+      );
     }
 
     if (!nacionalidad || nacionalidad.length < 3) {
@@ -179,15 +191,21 @@ const validarMenores = (menores = []) => {
     }
 
     if (!validarFechaNoFutura(menor.fecha_nacimiento)) {
-      errores.push(`Menor ${numeroMenor}: la fecha de nacimiento no puede ser futura.`);
+      errores.push(
+        `Menor ${numeroMenor}: la fecha de nacimiento no puede ser futura.`
+      );
     }
 
     if (!parentesco || parentesco.length < 2) {
-      errores.push(`Menor ${numeroMenor}: el parentesco o relación es obligatorio.`);
+      errores.push(
+        `Menor ${numeroMenor}: el parentesco o relación es obligatorio.`
+      );
     }
 
     if (observaciones.length > 300) {
-      errores.push(`Menor ${numeroMenor}: las observaciones no pueden superar los 300 caracteres.`);
+      errores.push(
+        `Menor ${numeroMenor}: las observaciones no pueden superar los 300 caracteres.`
+      );
     }
   });
 
@@ -201,7 +219,10 @@ const normalizarMenores = (menores = []) => {
     nombre: limpiarTexto(menor.nombre),
     apellido: limpiarTexto(menor.apellido),
     documento_tipo: limpiarTexto(menor.documento_tipo),
-    documento_numero: normalizarDocumento(menor.documento_tipo, menor.documento_numero),
+    documento_numero: normalizarDocumento(
+      menor.documento_tipo,
+      menor.documento_numero
+    ),
     nacionalidad: limpiarTexto(menor.nacionalidad),
     fecha_nacimiento: limpiarTexto(menor.fecha_nacimiento),
     parentesco: limpiarTexto(menor.parentesco),
@@ -210,11 +231,115 @@ const normalizarMenores = (menores = []) => {
   }));
 };
 
+const MAX_DOCUMENTOS_TRAMITE = 5;
+const MAX_TAMANO_DOCUMENTO = 2 * 1024 * 1024;
+
+const MIME_TYPES_PERMITIDOS = [
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+];
+
+const validarDocumentos = (documentos = []) => {
+  const errores = [];
+
+  if (!Array.isArray(documentos)) {
+    errores.push("Los documentos adjuntos deben enviarse como una lista.");
+    return errores;
+  }
+
+  if (documentos.length > MAX_DOCUMENTOS_TRAMITE) {
+    errores.push(
+      `Solo se permite adjuntar un máximo de ${MAX_DOCUMENTOS_TRAMITE} documentos por trámite.`
+    );
+  }
+
+  documentos.forEach((documento, index) => {
+    const numeroDocumento = index + 1;
+
+    const tipoDocumento = limpiarTexto(documento.tipo_documento);
+    const nombreArchivo = limpiarTexto(documento.nombre_archivo);
+    const mimeType = limpiarTexto(documento.mime_type).toLowerCase();
+    const tamano = Number(documento.tamano || 0);
+    const contenidoBase64 = limpiarTexto(documento.contenido_base64);
+    const observaciones = limpiarTexto(documento.observaciones);
+
+    if (!tipoDocumento || tipoDocumento.length < 3) {
+      errores.push(
+        `Documento ${numeroDocumento}: debes indicar el tipo de documento.`
+      );
+    }
+
+    if (!nombreArchivo) {
+      errores.push(
+        `Documento ${numeroDocumento}: el nombre del archivo es obligatorio.`
+      );
+    }
+
+    if (!MIME_TYPES_PERMITIDOS.includes(mimeType)) {
+      errores.push(
+        `Documento ${numeroDocumento}: solo se permiten archivos PDF, JPG, JPEG o PNG.`
+      );
+    }
+
+    if (!Number.isFinite(tamano) || tamano <= 0) {
+      errores.push(
+        `Documento ${numeroDocumento}: el tamaño del archivo no es válido.`
+      );
+    }
+
+    if (tamano > MAX_TAMANO_DOCUMENTO) {
+      errores.push(
+        `Documento ${numeroDocumento}: el archivo no puede superar los 2 MB.`
+      );
+    }
+
+    if (!contenidoBase64) {
+      errores.push(
+        `Documento ${numeroDocumento}: el contenido del archivo es obligatorio.`
+      );
+    }
+
+    if (
+      contenidoBase64 &&
+      !contenidoBase64.startsWith("data:") &&
+      !/^[A-Za-z0-9+/=\n\r]+$/.test(contenidoBase64)
+    ) {
+      errores.push(
+        `Documento ${numeroDocumento}: el archivo no tiene un formato válido.`
+      );
+    }
+
+    if (observaciones.length > 300) {
+      errores.push(
+        `Documento ${numeroDocumento}: las observaciones no pueden superar los 300 caracteres.`
+      );
+    }
+  });
+
+  return errores;
+};
+
+const normalizarDocumentos = (documentos = []) => {
+  if (!Array.isArray(documentos)) return [];
+
+  return documentos.map((documento) => ({
+    tipo_documento: limpiarTexto(documento.tipo_documento),
+    nombre_archivo: limpiarTexto(documento.nombre_archivo),
+    mime_type: limpiarTexto(documento.mime_type).toLowerCase(),
+    tamano: Number(documento.tamano || 0),
+    contenido_base64: limpiarTexto(documento.contenido_base64),
+    observaciones: limpiarTexto(documento.observaciones),
+  }));
+};
+
 const validarDatosTramite = ({
   persona,
   vehiculo,
   declaracion,
   menores = [],
+  documentos = [],
   motivo_viaje,
   destino,
 }) => {
@@ -306,6 +431,7 @@ const validarDatosTramite = ({
   }
 
   errores.push(...validarMenores(menores));
+  errores.push(...validarDocumentos(documentos));
 
   return errores;
 };
@@ -356,6 +482,7 @@ const crearTramite = async (req, res) => {
     vehiculo,
     declaracion,
     menores = [],
+    documentos = [],
     motivo_viaje,
     destino,
     frontera,
@@ -409,6 +536,7 @@ const crearTramite = async (req, res) => {
   };
 
   const menoresNormalizados = normalizarMenores(menores);
+  const documentosNormalizados = normalizarDocumentos(documentos);
 
   const personaPrueba = buscarPersonaPrueba(personaNormalizada.documento_numero);
   const vehiculoPrueba = buscarVehiculoPrueba(vehiculoNormalizado.patente);
@@ -662,6 +790,31 @@ const crearTramite = async (req, res) => {
       );
     }
 
+    for (const documento of documentosNormalizados) {
+      await runQuery(
+        `INSERT INTO documentos_tramite
+         (
+          tramite_id,
+          tipo_documento,
+          nombre_archivo,
+          mime_type,
+          tamano,
+          contenido_base64,
+          observaciones
+         )
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          tramiteId,
+          documento.tipo_documento,
+          documento.nombre_archivo,
+          documento.mime_type,
+          documento.tamano,
+          documento.contenido_base64,
+          documento.observaciones || "",
+        ]
+      );
+    }
+
     if (riesgo.nivel !== "VERDE") {
       await runQuery(
         `INSERT INTO alertas
@@ -684,6 +837,7 @@ const crearTramite = async (req, res) => {
       codigo_tramite: codigoTramite,
       riesgo,
       menores_registrados: menoresNormalizados.length,
+      documentos_registrados: documentosNormalizados.length,
     });
   } catch (error) {
     try {
@@ -727,6 +881,7 @@ const listarTramites = async (req, res) => {
       t.motivo_riesgo,
       t.accion_recomendada,
       COALESCE(mn.menores_count, 0) AS menores_count,
+      COALESCE(dc.documentos_count, 0) AS documentos_count,
       p.nombre || ' ' || p.apellido AS persona_nombre,
       p.documento_numero,
       p.nacionalidad,
@@ -751,6 +906,11 @@ const listarTramites = async (req, res) => {
       FROM menores
       GROUP BY tramite_id
     ) mn ON mn.tramite_id = t.id
+    LEFT JOIN (
+      SELECT tramite_id, COUNT(*) AS documentos_count
+      FROM documentos_tramite
+      GROUP BY tramite_id
+    ) dc ON dc.tramite_id = t.id
     ${where}
     ORDER BY t.id DESC
   `;
@@ -946,10 +1106,28 @@ const obtenerDetalleTramite = async (req, res) => {
       [id]
     );
 
+    const documentos = await allQuery(
+      `SELECT
+        id,
+        tipo_documento,
+        nombre_archivo,
+        mime_type,
+        tamano,
+        contenido_base64,
+        observaciones,
+        creado_en
+       FROM documentos_tramite
+       WHERE tramite_id = ?
+       ORDER BY id ASC`,
+      [id]
+    );
+
     return res.json({
       ...tramite,
       menores: menores || [],
       menores_count: menores?.length || 0,
+      documentos: documentos || [],
+      documentos_count: documentos?.length || 0,
     });
   } catch (error) {
     return res.status(500).json({
@@ -978,6 +1156,7 @@ const obtenerTramitePorCodigo = async (req, res) => {
       t.frontera,
       t.nivel_riesgo,
       COALESCE(mn.menores_count, 0) AS menores_count,
+      COALESCE(dc.documentos_count, 0) AS documentos_count,
       p.nombre || ' ' || p.apellido AS persona_nombre,
       p.documento_numero,
       v.patente,
@@ -991,6 +1170,11 @@ const obtenerTramitePorCodigo = async (req, res) => {
       FROM menores
       GROUP BY tramite_id
     ) mn ON mn.tramite_id = t.id
+    LEFT JOIN (
+      SELECT tramite_id, COUNT(*) AS documentos_count
+      FROM documentos_tramite
+      GROUP BY tramite_id
+    ) dc ON dc.tramite_id = t.id
     WHERE t.codigo_tramite = ?
   `;
 

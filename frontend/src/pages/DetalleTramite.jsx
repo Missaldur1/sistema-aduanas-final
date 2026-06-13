@@ -6,7 +6,10 @@ import {
   ArrowLeft,
   Car,
   ClipboardCheck,
+  Download,
+  Eye,
   FileText,
+  Paperclip,
   ShieldAlert,
   User,
   Users,
@@ -16,6 +19,26 @@ import Layout from "../components/Layout";
 
 function valorSiNo(valor) {
   return valor ? "Sí" : "No";
+}
+
+function formatearTamanoArchivo(tamano = 0) {
+  const bytes = Number(tamano || 0);
+
+  if (!bytes) return "Tamaño no registrado";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function obtenerUrlDocumento(documento) {
+  if (!documento?.contenido_base64) return "#";
+
+  if (documento.contenido_base64.startsWith("data:")) {
+    return documento.contenido_base64;
+  }
+
+  return `data:${documento.mime_type};base64,${documento.contenido_base64}`;
 }
 
 function DetalleTramite() {
@@ -81,6 +104,7 @@ function DetalleTramite() {
   }
 
   const menores = tramite?.menores || [];
+  const documentos = tramite?.documentos || [];
 
   return (
     <Layout
@@ -109,6 +133,11 @@ function DetalleTramite() {
           <p>
             Menores acompañantes:{" "}
             <strong>{tramite.menores_count || menores.length || 0}</strong>
+          </p>
+
+          <p>
+            Documentos adjuntos:{" "}
+            <strong>{tramite.documentos_count || documentos.length || 0}</strong>
           </p>
         </div>
 
@@ -342,6 +371,84 @@ function DetalleTramite() {
         ) : (
           <div className="minor-empty-box">
             Este trámite no registra menores acompañantes.
+          </div>
+        )}
+      </section>
+
+      <section className="panel-card documents-detail-panel">
+        <div className="detail-card-title">
+          <Paperclip size={24} />
+          <h3>Documentos adjuntos</h3>
+        </div>
+
+        {documentos.length > 0 ? (
+          <div className="documents-detail-list">
+            {documentos.map((documento, index) => {
+              const urlDocumento = obtenerUrlDocumento(documento);
+
+              return (
+                <article
+                  className="document-detail-card"
+                  key={documento.id || index}
+                >
+                  <div className="document-detail-header">
+                    <div>
+                      <span>Documento {index + 1}</span>
+                      <strong>{documento.tipo_documento}</strong>
+                      <small>{documento.nombre_archivo}</small>
+                    </div>
+
+                    <div className="document-type-pill">
+                      {documento.mime_type || "Archivo"}
+                    </div>
+                  </div>
+
+                  <div className="document-detail-grid">
+                    <p>
+                      <strong>Nombre archivo:</strong>{" "}
+                      {documento.nombre_archivo || "No registrado"}
+                    </p>
+                    <p>
+                      <strong>Tipo archivo:</strong>{" "}
+                      {documento.mime_type || "No registrado"}
+                    </p>
+                    <p>
+                      <strong>Tamaño:</strong>{" "}
+                      {formatearTamanoArchivo(documento.tamano)}
+                    </p>
+                    <p>
+                      <strong>Observaciones:</strong>{" "}
+                      {documento.observaciones || "Sin observaciones"}
+                    </p>
+                  </div>
+
+                  <div className="document-actions">
+                    <a
+                      className="document-action-btn"
+                      href={urlDocumento}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Eye size={17} />
+                      Ver archivo
+                    </a>
+
+                    <a
+                      className="document-action-btn document-download-btn"
+                      href={urlDocumento}
+                      download={documento.nombre_archivo || "documento-adjunto"}
+                    >
+                      <Download size={17} />
+                      Descargar
+                    </a>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="document-empty-box">
+            Este trámite no registra documentos adjuntos.
           </div>
         )}
       </section>

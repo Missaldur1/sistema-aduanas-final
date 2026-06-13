@@ -123,6 +123,21 @@ async function crearTablas() {
   `);
 
   await run(`
+    CREATE TABLE IF NOT EXISTS documentos_tramite (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tramite_id INTEGER NOT NULL,
+      tipo_documento TEXT NOT NULL,
+      nombre_archivo TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      tamano INTEGER DEFAULT 0,
+      contenido_base64 TEXT NOT NULL,
+      observaciones TEXT DEFAULT '',
+      creado_en TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tramite_id) REFERENCES tramites(id)
+    )
+  `);
+
+  await run(`
     CREATE TABLE IF NOT EXISTS declaraciones (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tramite_id INTEGER NOT NULL,
@@ -191,6 +206,8 @@ async function seed() {
 
 crearTablas()
   .then(seed)
-  .catch((error) => console.error("Error preparando base de datos:", error.message));
+  .catch((error) =>
+    console.error("Error preparando base de datos:", error.message)
+  );
 
 module.exports = db;

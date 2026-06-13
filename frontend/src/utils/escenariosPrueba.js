@@ -144,7 +144,7 @@ export const escenariosPrueba = [
     }
   },
   {
-    nombre: "Viaje familiar con 1 menor",
+    nombre: "Escenario 5: Viaje familiar con 1 menor",
     data: {
       persona: {
         nombre: "Ana",
@@ -190,10 +190,11 @@ export const escenariosPrueba = [
           observaciones: "Menor viaja acompañada por adulto responsable.",
         },
       ],
+      documentos: [],
     },
   },
   {
-    nombre: "Viaje familiar con 2 menores",
+    nombre: "Escenario 6: Viaje familiar con 2 menores",
     data: {
       persona: {
         nombre: "Marcelo",
@@ -250,10 +251,11 @@ export const escenariosPrueba = [
           observaciones: "",
         },
       ],
+      documentos: [],
     },
   },
   {
-    nombre: "Menor con autorización pendiente",
+    nombre: "Escenario 7: Menor con autorización pendiente",
     data: {
       persona: {
         nombre: "Carolina",
@@ -281,7 +283,8 @@ export const escenariosPrueba = [
         transporta_vegetales: false,
         transporta_animales: false,
         dinero_mayor_declarable: false,
-        observaciones: "Viaje con menor cuya documentación será revisada por Aduanas.",
+        observaciones:
+          "Viaje con menor cuya documentación será revisada por Aduanas.",
       },
       motivo_viaje: "Turismo",
       destino: "Argentina",
@@ -296,13 +299,15 @@ export const escenariosPrueba = [
           fecha_nacimiento: "2017-09-22",
           parentesco: "Hijo/a",
           autorizacion_viaje: "Documento pendiente de revisión",
-          observaciones: "Debe presentar autorización notarial al momento del control.",
+          observaciones:
+            "Debe presentar autorización notarial al momento del control.",
         },
       ],
+      documentos: [],
     },
   },
   {
-    nombre: "Tutor legal con menor extranjero",
+    nombre: "Escenario 8: Tutor legal con menor extranjero",
     data: {
       persona: {
         nombre: "Javier",
@@ -348,10 +353,11 @@ export const escenariosPrueba = [
           observaciones: "Menor extranjero viaja con tutor legal.",
         },
       ],
+      documentos: [],
     },
   },
   {
-    nombre: "Viaje con menor y alimentos declarados",
+    nombre: "Escenario 9: Viaje con menor y alimentos declarados",
     data: {
       persona: {
         nombre: "Paula",
@@ -397,6 +403,7 @@ export const escenariosPrueba = [
           observaciones: "",
         },
       ],
+      documentos: [],
     },
   },
 ];
