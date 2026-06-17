@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  ChevronDown,
   CheckCircle2,
   ClipboardList,
   Copy,
@@ -8,11 +9,12 @@ import {
   FileText,
   Moon,
   Paperclip,
+  Plus,
   Printer,
   ShieldCheck,
   Sun,
   Trash2,
-  Users
+  Users,
 } from "lucide-react";
 import api from "../api/api";
 import Layout from "../components/Layout";
@@ -43,7 +45,7 @@ const nacionalidades = [
   "China",
   "Japonesa",
   "Coreana",
-  "Otra"
+  "Otra",
 ];
 
 const prefijosTelefonicos = [
@@ -59,7 +61,7 @@ const prefijosTelefonicos = [
   { codigo: "+58", pais: "Venezuela" },
   { codigo: "+52", pais: "México" },
   { codigo: "+1", pais: "Estados Unidos / Canadá" },
-  { codigo: "+34", pais: "España" }
+  { codigo: "+34", pais: "España" },
 ];
 
 const tiposDocumentosAdjuntos = [
@@ -69,18 +71,77 @@ const tiposDocumentosAdjuntos = [
   "Permiso de circulación",
   "Revisión técnica",
   "Seguro obligatorio",
-  "Documento adicional"
+  "Documento adicional",
 ];
 
 const tiposArchivosPermitidos = [
   "application/pdf",
   "image/jpeg",
   "image/jpg",
-  "image/png"
+  "image/png",
 ];
 
 const MAX_DOCUMENTOS_TRAMITE = 5;
 const MAX_TAMANO_DOCUMENTO = 2 * 1024 * 1024;
+
+const menorInicial = {
+  nombre: "",
+  apellido: "",
+  documento_tipo: "RUT",
+  documento_numero: "",
+  nacionalidad: "Chilena",
+  nacionalidad_otro: "",
+  fecha_nacimiento: "",
+  parentesco: "Hijo/a",
+  autorizacion_viaje: "Presenta autorización de viaje",
+  observaciones: "",
+};
+
+const crearFormularioInicial = () => ({
+  persona: {
+    nombre: "",
+    apellido: "",
+    documento_tipo: "RUT",
+    documento_numero: "",
+    nacionalidad: "Chilena",
+    nacionalidad_otro: "",
+    fecha_nacimiento: "",
+    prefijo_telefono: "+56",
+    telefono: "",
+    email: "",
+  },
+  vehiculo: {
+    tipo: "Particular",
+    patente: "",
+    pais_origen: "",
+    marca: "",
+    modelo: "",
+    anio: "",
+    color: "",
+    chasis: "",
+    motor: "",
+  },
+  declaracion: {
+    transporta_alimentos: false,
+    transporta_vegetales: false,
+    transporta_animales: false,
+    dinero_mayor_declarable: false,
+    observaciones: "",
+  },
+  motivo_viaje: "Turismo",
+  motivo_viaje_otro: "",
+  destino: "",
+  frontera: "Complejo Los Libertadores",
+  menores: [],
+  documentos: [],
+});
+
+const obtenerPlaceholderDocumento = (tipoDocumento) => {
+  if (tipoDocumento === "RUT") return "Ej: 12.345.678-5";
+  if (tipoDocumento === "DNI") return "Ej: 12.345.678";
+  if (tipoDocumento === "Pasaporte") return "Ej: AB123456";
+  return "Ingrese número de documento";
+};
 
 const formatearTamanoArchivo = (bytes = 0) => {
   if (!bytes) return "0 KB";
@@ -92,24 +153,39 @@ const formatearTamanoArchivo = (bytes = 0) => {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 };
 
-const menorInicial = {
-  nombre: "",
-  apellido: "",
-  documento_tipo: "RUT",
-  documento_numero: "",
-  nacionalidad: "Chilena",
-  fecha_nacimiento: "",
-  parentesco: "Hijo/a",
-  autorizacion_viaje: "Presenta autorización de viaje",
-  observaciones: ""
-};
+function EtiquetaCampo({ children, requerido = false }) {
+  return (
+    <span className="field-label-text">
+      {children}
+      {requerido && <span className="required-star"> *</span>}
+    </span>
+  );
+}
 
-const obtenerPlaceholderDocumento = (tipoDocumento) => {
-  if (tipoDocumento === "RUT") return "Ej: 12.345.678-5";
-  if (tipoDocumento === "Pasaporte") return "Ej: PA1234567";
-  if (tipoDocumento === "DNI") return "Ej: 12345678";
-  return "Ingrese número de documento";
-};
+function SeccionDesplegable({ id, titulo, descripcion, icono, abierto, onToggle, className = "", children }) {
+  return (
+    <section className={`panel-card form-section collapsible-form-section ${className} ${abierto ? "is-open" : ""}`}>
+      <button
+        type="button"
+        className="collapsible-section-header"
+        onClick={() => onToggle(id)}
+        aria-expanded={abierto}
+      >
+        <div className="collapsible-title-row">
+          <div className="collapsible-icon-box">{icono}</div>
+          <div>
+            <h2>{titulo}</h2>
+            {descripcion && <p>{descripcion}</p>}
+          </div>
+        </div>
+
+        <ChevronDown size={22} className="collapsible-chevron" />
+      </button>
+
+      {abierto && <div className="collapsible-section-body">{children}</div>}
+    </section>
+  );
+}
 
 function RegistroPaso({ publico = false }) {
   useEffect(() => {
@@ -118,69 +194,62 @@ function RegistroPaso({ publico = false }) {
     }
   }, [publico]);
 
-  const formularioInicial = {
-    persona: {
-      nombre: "",
-      apellido: "",
-      documento_tipo: "RUT",
-      documento_numero: "",
-      nacionalidad: "Chilena",
-      nacionalidad_otro: "",
-      fecha_nacimiento: "",
-      prefijo_telefono: "+56",
-      telefono: "",
-      email: ""
-    },
-    vehiculo: {
-      tipo: "Particular",
-      patente: "",
-      pais_origen: "",
-      marca: "",
-      modelo: "",
-      anio: "",
-      color: "",
-      chasis: "",
-      motor: ""
-    },
-    declaracion: {
-      transporta_alimentos: false,
-      transporta_vegetales: false,
-      transporta_animales: false,
-      dinero_mayor_declarable: false,
-      observaciones: ""
-    },
-    motivo_viaje: "Turismo",
-    motivo_viaje_otro: "",
-    destino: "",
-    frontera: "Complejo Los Libertadores",
-    menores: [],
-    documentos: []
-  };
-
   const [modoOscuro, setModoOscuro] = useState(() => {
     return localStorage.getItem("modoRegistro") === "oscuro";
   });
 
-  const [form, setForm] = useState(formularioInicial);
+  const [form, setForm] = useState(crearFormularioInicial);
   const [mensaje, setMensaje] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [comprobante, setComprobante] = useState(null);
   const [camposFaltantes, setCamposFaltantes] = useState({});
+  const [mensajeComprobante, setMensajeComprobante] = useState("");
+  const [tipoDocumentoAdjunto, setTipoDocumentoAdjunto] = useState("Autorización notarial para menor");
+  const [observacionDocumentoAdjunto, setObservacionDocumentoAdjunto] = useState("");
+  const [procesandoDocumento, setProcesandoDocumento] = useState(false);
+  const [seccionesAbiertas, setSeccionesAbiertas] = useState({
+    persona: true,
+    menores: false,
+    vehiculo: false,
+    documentos: false,
+    viaje: false,
+  });
 
   const comprobanteRef = useRef(null);
   const archivoInputRef = useRef(null);
-  const [mensajeComprobante, setMensajeComprobante] = useState("");
-  const [tipoDocumentoAdjunto, setTipoDocumentoAdjunto] = useState(
-    "Autorización notarial para menor"
-  );
-  const [observacionDocumentoAdjunto, setObservacionDocumentoAdjunto] =
-    useState("");
-  const [procesandoDocumento, setProcesandoDocumento] = useState(false);
 
   const cambiarModo = () => {
     const nuevoModo = !modoOscuro;
     setModoOscuro(nuevoModo);
     localStorage.setItem("modoRegistro", nuevoModo ? "oscuro" : "claro");
+  };
+
+  const toggleSeccion = (id) => {
+    setSeccionesAbiertas((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const abrirSeccionesConErrores = (errores) => {
+    const rutas = Object.keys(errores);
+
+    setSeccionesAbiertas((prev) => ({
+      ...prev,
+      persona: prev.persona || rutas.some((ruta) => ruta.startsWith("persona.")),
+      menores: prev.menores || rutas.some((ruta) => ruta.startsWith("menores.")),
+      vehiculo: prev.vehiculo || rutas.some((ruta) => ruta.startsWith("vehiculo.")),
+      documentos: prev.documentos || rutas.some((ruta) => ruta.startsWith("documentos")),
+      viaje:
+        prev.viaje ||
+        rutas.some(
+          (ruta) =>
+            ruta.startsWith("declaracion.") ||
+            ruta === "motivo_viaje" ||
+            ruta === "motivo_viaje_otro" ||
+            ruta === "destino"
+        ),
+    }));
   };
 
   const quitarError = (ruta) => {
@@ -196,8 +265,8 @@ function RegistroPaso({ publico = false }) {
       ...prev,
       [seccion]: {
         ...prev[seccion],
-        [campo]: valor
-      }
+        [campo]: valor,
+      },
     }));
 
     quitarError(`${seccion}.${campo}`);
@@ -206,56 +275,17 @@ function RegistroPaso({ publico = false }) {
   const cambiarSimple = (campo, valor) => {
     setForm((prev) => ({
       ...prev,
-      [campo]: valor
+      [campo]: valor,
     }));
 
     quitarError(campo);
-  };
-
-  const cambiarTipoDocumento = (valor) => {
-    setForm((prev) => ({
-      ...prev,
-      persona: {
-        ...prev.persona,
-        documento_tipo: valor,
-        documento_numero: ""
-      }
-    }));
-
-    setCamposFaltantes((prev) => {
-      const nuevosErrores = { ...prev };
-      delete nuevosErrores["persona.documento_numero"];
-      return nuevosErrores;
-    });
-  };
-
-  const cambiarNacionalidad = (valor) => {
-    setForm((prev) => ({
-      ...prev,
-      persona: {
-        ...prev.persona,
-        nacionalidad: valor,
-        nacionalidad_otro: valor === "Otra" ? prev.persona.nacionalidad_otro : ""
-      }
-    }));
-
-    setCamposFaltantes((prev) => {
-      const nuevosErrores = { ...prev };
-      delete nuevosErrores["persona.nacionalidad"];
-      delete nuevosErrores["persona.nacionalidad_otro"];
-      return nuevosErrores;
-    });
-  };
-
-  const limpiarTextoSoloLetras = (texto) => {
-    return texto.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, "");
   };
 
   const cambiarMotivoViaje = (valor) => {
     setForm((prev) => ({
       ...prev,
       motivo_viaje: valor,
-      motivo_viaje_otro: valor === "Otro" ? prev.motivo_viaje_otro : ""
+      motivo_viaje_otro: valor === "Otro" ? prev.motivo_viaje_otro : "",
     }));
 
     setCamposFaltantes((prev) => {
@@ -284,6 +314,10 @@ function RegistroPaso({ publico = false }) {
     return /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(texto);
   };
 
+  const limpiarTextoSoloLetras = (texto) => {
+    return texto.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, "");
+  };
+
   const validarEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -292,19 +326,17 @@ function RegistroPaso({ publico = false }) {
     return /^[0-9\s-]{6,15}$/.test(telefono);
   };
 
-  const limpiarRut = (rut) => {
+  const limpiarRut = (rut = "") => {
     return rut.replace(/\./g, "").replace(/-/g, "").trim().toUpperCase();
   };
 
-  const formatearRut = (valor) => {
+  const formatearRut = (valor = "") => {
     const rutLimpio = valor
       .replace(/[^0-9kK]/g, "")
       .toUpperCase()
       .slice(0, 9);
 
-    if (rutLimpio.length <= 1) {
-      return rutLimpio;
-    }
+    if (rutLimpio.length <= 1) return rutLimpio;
 
     const cuerpo = rutLimpio.slice(0, -1);
     const dv = rutLimpio.slice(-1);
@@ -313,19 +345,127 @@ function RegistroPaso({ publico = false }) {
     return `${cuerpoFormateado}-${dv}`;
   };
 
-  const cambiarDocumento = (valor) => {
-    const valorFinal =
-      form.persona.documento_tipo === "RUT" ? formatearRut(valor) : valor;
+  const formatearDni = (valor = "") => {
+    const dniLimpio = valor.replace(/\D/g, "").slice(0, 8);
+    return dniLimpio.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
 
-    cambiar("persona", "documento_numero", valorFinal);
+  const formatearPasaporte = (valor = "") => {
+    return valor.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 9);
+  };
+
+  const limpiarDni = (dni = "") => {
+    return dni.replace(/\./g, "").replace(/\D/g, "");
+  };
+
+  const formatearDocumentoPorTipo = (tipoDocumento, valor) => {
+    if (tipoDocumento === "RUT") return formatearRut(valor);
+    if (tipoDocumento === "DNI") return formatearDni(valor);
+    if (tipoDocumento === "Pasaporte") return formatearPasaporte(valor);
+    return valor;
+  };
+
+  const validarRutChileno = (rut) => {
+    const rutLimpio = limpiarRut(rut);
+
+    if (!/^[0-9]{7,8}[0-9K]$/.test(rutLimpio)) return false;
+
+    const cuerpo = rutLimpio.slice(0, -1);
+    const dv = rutLimpio.slice(-1);
+
+    let suma = 0;
+    let multiplo = 2;
+
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+      suma += Number(cuerpo[i]) * multiplo;
+      multiplo = multiplo < 7 ? multiplo + 1 : 2;
+    }
+
+    const dvEsperado = 11 - (suma % 11);
+    const dvCalculado =
+      dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : String(dvEsperado);
+
+    return dv === dvCalculado;
+  };
+
+  const validarDocumentoPorTipo = (tipoDocumento, documento, etiqueta = "documento") => {
+    const valor = documento.trim();
+
+    if (!valor) return `El número de ${etiqueta} es obligatorio.`;
+
+    if (tipoDocumento === "RUT") {
+      if (!validarRutChileno(valor)) {
+        return "Ingresa un RUT válido. Ej: 12.345.678-5.";
+      }
+
+      return null;
+    }
+
+    if (tipoDocumento === "DNI") {
+      const dniLimpio = limpiarDni(valor);
+
+      if (!/^\d{7,8}$/.test(dniLimpio)) {
+        return "El DNI debe tener solo números, mínimo 7 y máximo 8 dígitos.";
+      }
+
+      return null;
+    }
+
+    if (tipoDocumento === "Pasaporte") {
+      const pasaporte = valor.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+      if (!/^[A-Z0-9]{6,9}$/.test(pasaporte)) {
+        return "El pasaporte debe tener entre 6 y 9 caracteres alfanuméricos.";
+      }
+
+      return null;
+    }
+
+    return "El tipo de documento no es válido.";
+  };
+
+  const cambiarTipoDocumentoPersona = (valor) => {
+    setForm((prev) => ({
+      ...prev,
+      persona: {
+        ...prev.persona,
+        documento_tipo: valor,
+        documento_numero: "",
+      },
+    }));
+
+    quitarError("persona.documento_numero");
+  };
+
+  const cambiarDocumentoPersona = (valor) => {
+    cambiar(
+      "persona",
+      "documento_numero",
+      formatearDocumentoPorTipo(form.persona.documento_tipo, valor)
+    );
+  };
+
+  const convertirFechaParaInput = (fechaTexto) => {
+    if (!fechaTexto) return null;
+
+    const [anio, mes, dia] = fechaTexto.split("-");
+    return new Date(Number(anio), Number(mes) - 1, Number(dia));
+  };
+
+  const convertirFechaParaBD = (fecha) => {
+    if (!fecha) return "";
+
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+    const dia = String(fecha.getDate()).padStart(2, "0");
+
+    return `${anio}-${mes}-${dia}`;
   };
 
   const calcularEdad = (fechaTexto) => {
     const fecha = convertirFechaParaInput(fechaTexto);
 
-    if (!fecha || Number.isNaN(fecha.getTime())) {
-      return null;
-    }
+    if (!fecha || Number.isNaN(fecha.getTime())) return null;
 
     const hoy = new Date();
     let edad = hoy.getFullYear() - fecha.getFullYear();
@@ -338,37 +478,86 @@ function RegistroPaso({ publico = false }) {
     return edad;
   };
 
-  const validarFechaNacimientoMenor = (fechaTexto) => {
-    const errorFecha = validarFechaNacimiento(fechaTexto);
+  const validarFechaNacimiento = (fechaTexto) => {
+    if (!fechaTexto) return "La fecha de nacimiento es obligatoria.";
 
-    if (errorFecha) {
-      return errorFecha;
-    }
+    const fecha = convertirFechaParaInput(fechaTexto);
+    const hoy = new Date();
+
+    if (!fecha || Number.isNaN(fecha.getTime())) return "La fecha de nacimiento no es válida.";
+    if (fecha > hoy) return "La fecha de nacimiento no puede ser futura.";
 
     const edad = calcularEdad(fechaTexto);
 
-    if (edad === null) {
-      return "La fecha de nacimiento no es válida.";
-    }
-
-    if (edad >= 18) {
-      return "El acompañante registrado como menor debe tener menos de 18 años.";
-    }
+    if (edad > 120) return "La fecha de nacimiento no puede superar los 120 años.";
 
     return null;
+  };
+
+  const validarFechaNacimientoMenor = (fechaTexto) => {
+    const errorFecha = validarFechaNacimiento(fechaTexto);
+
+    if (errorFecha) return errorFecha;
+
+    const edad = calcularEdad(fechaTexto);
+
+    if (edad === null) return "La fecha de nacimiento no es válida.";
+    if (edad >= 18) return "El acompañante registrado como menor debe tener menos de 18 años.";
+
+    return null;
+  };
+
+  const separarTelefonoEscenario = (telefono = "") => {
+    const telefonoLimpio = telefono.trim();
+    const prefijoEncontrado = prefijosTelefonicos.find((item) => telefonoLimpio.startsWith(item.codigo));
+
+    if (!prefijoEncontrado) {
+      return {
+        prefijo_telefono: "+56",
+        telefono: telefonoLimpio,
+      };
+    }
+
+    return {
+      prefijo_telefono: prefijoEncontrado.codigo,
+      telefono: telefonoLimpio.replace(prefijoEncontrado.codigo, "").trim(),
+    };
+  };
+
+  const normalizarNacionalidadEscenario = (valor = "") => {
+    if (!valor) {
+      return {
+        nacionalidad: "Chilena",
+        nacionalidad_otro: "",
+      };
+    }
+
+    if (nacionalidades.includes(valor)) {
+      return {
+        nacionalidad: valor,
+        nacionalidad_otro: "",
+      };
+    }
+
+    return {
+      nacionalidad: "Otra",
+      nacionalidad_otro: valor,
+    };
   };
 
   const agregarMenor = () => {
     setForm((prev) => ({
       ...prev,
-      menores: [...(prev.menores || []), { ...menorInicial }]
+      menores: [...(prev.menores || []), { ...menorInicial }],
     }));
+
+    setSeccionesAbiertas((prev) => ({ ...prev, menores: true }));
   };
 
   const eliminarMenor = (index) => {
     setForm((prev) => ({
       ...prev,
-      menores: (prev.menores || []).filter((_, i) => i !== index)
+      menores: (prev.menores || []).filter((_, i) => i !== index),
     }));
 
     setCamposFaltantes((prev) => {
@@ -400,7 +589,7 @@ function RegistroPaso({ publico = false }) {
       ...prev,
       menores: (prev.menores || []).map((menor, i) =>
         i === index ? { ...menor, [campo]: valor } : menor
-      )
+      ),
     }));
 
     quitarError(`menores.${index}.${campo}`);
@@ -414,10 +603,10 @@ function RegistroPaso({ publico = false }) {
           ? {
               ...menor,
               documento_tipo: valor,
-              documento_numero: ""
+              documento_numero: "",
             }
           : menor
-      )
+      ),
     }));
 
     quitarError(`menores.${index}.documento_numero`);
@@ -426,181 +615,93 @@ function RegistroPaso({ publico = false }) {
   const cambiarDocumentoMenor = (index, valor) => {
     const menor = form.menores?.[index];
 
-    const valorFinal =
-      menor?.documento_tipo === "RUT" ? formatearRut(valor) : valor;
-
-    cambiarMenor(index, "documento_numero", valorFinal);
-  };
-
-  const validarRutChileno = (rut) => {
-    const rutLimpio = limpiarRut(rut);
-
-    if (!/^[0-9]{7,8}[0-9K]$/.test(rutLimpio)) {
-      return false;
-    }
-
-    const cuerpo = rutLimpio.slice(0, -1);
-    const dv = rutLimpio.slice(-1);
-
-    let suma = 0;
-    let multiplo = 2;
-
-    for (let i = cuerpo.length - 1; i >= 0; i--) {
-      suma += Number(cuerpo[i]) * multiplo;
-      multiplo = multiplo < 7 ? multiplo + 1 : 2;
-    }
-
-    const dvEsperado = 11 - (suma % 11);
-    const dvCalculado =
-      dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : String(dvEsperado);
-
-    return dv === dvCalculado;
-  };
-
-  const convertirFechaParaInput = (fechaTexto) => {
-    if (!fechaTexto) return null;
-
-    const [anio, mes, dia] = fechaTexto.split("-");
-    return new Date(Number(anio), Number(mes) - 1, Number(dia));
-  };
-
-  const convertirFechaParaBD = (fecha) => {
-    if (!fecha) return "";
-
-    const anio = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-    const dia = String(fecha.getDate()).padStart(2, "0");
-
-    return `${anio}-${mes}-${dia}`;
-  };
-
-  const validarFechaNacimiento = (fechaTexto) => {
-    if (!fechaTexto) {
-      return "La fecha de nacimiento es obligatoria.";
-    }
-
-    const fecha = convertirFechaParaInput(fechaTexto);
-    const hoy = new Date();
-
-    if (!fecha || Number.isNaN(fecha.getTime())) {
-      return "La fecha de nacimiento no es válida.";
-    }
-
-    if (fecha > hoy) {
-      return "La fecha de nacimiento no puede ser futura.";
-    }
-
-    const edadAproximada = hoy.getFullYear() - fecha.getFullYear();
-
-    if (edadAproximada > 120) {
-      return "La fecha de nacimiento no puede superar los 120 años.";
-    }
-
-    return null;
-  };
-
-  const separarTelefonoEscenario = (telefono = "") => {
-    const telefonoLimpio = telefono.trim();
-
-    const prefijoEncontrado = prefijosTelefonicos.find((item) =>
-      telefonoLimpio.startsWith(item.codigo)
+    cambiarMenor(
+      index,
+      "documento_numero",
+      formatearDocumentoPorTipo(menor?.documento_tipo, valor)
     );
-
-    if (!prefijoEncontrado) {
-      return {
-        prefijo_telefono: "+56",
-        telefono: telefonoLimpio
-      };
-    }
-
-    return {
-      prefijo_telefono: prefijoEncontrado.codigo,
-      telefono: telefonoLimpio.replace(prefijoEncontrado.codigo, "").trim()
-    };
   };
 
-  const convertirArchivoBase64 = (archivo) => {
+  const leerArchivoComoBase64 = (archivo) => {
     return new Promise((resolve, reject) => {
       const lector = new FileReader();
-
       lector.onload = () => resolve(lector.result);
       lector.onerror = () => reject(new Error("No se pudo leer el archivo."));
       lector.readAsDataURL(archivo);
     });
   };
 
-  const agregarDocumentoAdjunto = async (evento) => {
-    const archivo = evento.target.files?.[0];
+  const agregarDocumentoAdjunto = async (e) => {
+    const archivo = e.target.files?.[0];
 
     if (!archivo) return;
 
     setMensaje(null);
 
     if ((form.documentos || []).length >= MAX_DOCUMENTOS_TRAMITE) {
-      setMensaje({
-        tipo: "error",
-        texto: `Solo puedes adjuntar un máximo de ${MAX_DOCUMENTOS_TRAMITE} documentos por trámite.`
-      });
-
-      evento.target.value = "";
+      setCamposFaltantes((prev) => ({
+        ...prev,
+        documentos: `Solo puedes adjuntar hasta ${MAX_DOCUMENTOS_TRAMITE} documentos por trámite.`,
+      }));
+      e.target.value = "";
       return;
     }
 
     if (!tiposArchivosPermitidos.includes(archivo.type)) {
-      setMensaje({
-        tipo: "error",
-        texto: "Solo se permiten archivos PDF, JPG, JPEG o PNG."
-      });
-
-      evento.target.value = "";
+      setCamposFaltantes((prev) => ({
+        ...prev,
+        documentos: "Solo se permiten archivos PDF, JPG, JPEG o PNG.",
+      }));
+      e.target.value = "";
       return;
     }
 
     if (archivo.size > MAX_TAMANO_DOCUMENTO) {
-      setMensaje({
-        tipo: "error",
-        texto: "El archivo no puede superar los 2 MB."
-      });
-
-      evento.target.value = "";
+      setCamposFaltantes((prev) => ({
+        ...prev,
+        documentos: "El archivo no puede superar los 2 MB.",
+      }));
+      e.target.value = "";
       return;
     }
 
     try {
       setProcesandoDocumento(true);
-      const contenidoBase64 = await convertirArchivoBase64(archivo);
 
-      const nuevoDocumento = {
-        tipo_documento: tipoDocumentoAdjunto,
-        nombre_archivo: archivo.name,
-        mime_type: archivo.type,
-        tamano: archivo.size,
-        contenido_base64: contenidoBase64,
-        observaciones: observacionDocumentoAdjunto.trim()
-      };
+      const contenidoBase64 = await leerArchivoComoBase64(archivo);
 
       setForm((prev) => ({
         ...prev,
-        documentos: [...(prev.documentos || []), nuevoDocumento]
+        documentos: [
+          ...(prev.documentos || []),
+          {
+            tipo_documento: tipoDocumentoAdjunto,
+            nombre_archivo: archivo.name,
+            mime_type: archivo.type,
+            tamano: archivo.size,
+            contenido_base64: contenidoBase64,
+            observaciones: observacionDocumentoAdjunto.trim(),
+          },
+        ],
       }));
 
       setObservacionDocumentoAdjunto("");
       quitarError("documentos");
     } catch (error) {
-      setMensaje({
-        tipo: "error",
-        texto: "No se pudo cargar el archivo seleccionado."
-      });
+      setCamposFaltantes((prev) => ({
+        ...prev,
+        documentos: "No se pudo leer el archivo seleccionado.",
+      }));
     } finally {
       setProcesandoDocumento(false);
-      evento.target.value = "";
+      e.target.value = "";
     }
   };
 
   const eliminarDocumentoAdjunto = (index) => {
     setForm((prev) => ({
       ...prev,
-      documentos: (prev.documentos || []).filter((_, i) => i !== index)
+      documentos: (prev.documentos || []).filter((_, i) => i !== index),
     }));
 
     quitarError("documentos");
@@ -645,17 +746,10 @@ function RegistroPaso({ publico = false }) {
       errores["persona.apellido"] = "El apellido solo debe contener letras.";
     }
 
-    if (!documento) {
-      errores["persona.documento_numero"] = "El número de documento es obligatorio.";
-    } else if (form.persona.documento_tipo === "RUT" && !validarRutChileno(documento)) {
-      errores["persona.documento_numero"] =
-        "Ingresa un RUT válido. Ej: 12.345.678-5.";
-    } else if (
-      form.persona.documento_tipo !== "RUT" &&
-      !/^[A-Za-z0-9-]{5,20}$/.test(documento)
-    ) {
-      errores["persona.documento_numero"] =
-        "El documento debe tener entre 5 y 20 caracteres.";
+    const errorDocumentoPersona = validarDocumentoPorTipo(form.persona.documento_tipo, documento, "documento");
+
+    if (errorDocumentoPersona) {
+      errores["persona.documento_numero"] = errorDocumentoPersona;
     }
 
     if (!nacionalidad) {
@@ -664,15 +758,12 @@ function RegistroPaso({ publico = false }) {
       if (!nacionalidadOtro) {
         errores["persona.nacionalidad_otro"] = "Debes indicar la nacionalidad.";
       } else if (nacionalidadOtro.length < 3) {
-        errores["persona.nacionalidad_otro"] =
-          "La nacionalidad debe tener al menos 3 caracteres.";
+        errores["persona.nacionalidad_otro"] = "La nacionalidad debe tener al menos 3 caracteres.";
       } else if (!soloLetras(nacionalidadOtro)) {
-        errores["persona.nacionalidad_otro"] =
-          "La nacionalidad no debe contener números ni caracteres especiales.";
+        errores["persona.nacionalidad_otro"] = "La nacionalidad no debe contener números ni caracteres especiales.";
       }
     } else if (!soloLetras(nacionalidad)) {
-      errores["persona.nacionalidad"] =
-        "La nacionalidad solo debe contener letras.";
+      errores["persona.nacionalidad"] = "La nacionalidad solo debe contener letras.";
     }
 
     const errorFecha = validarFechaNacimiento(form.persona.fecha_nacimiento);
@@ -681,30 +772,30 @@ function RegistroPaso({ publico = false }) {
       errores["persona.fecha_nacimiento"] = errorFecha;
     }
 
-    if (telefono && !validarTelefono(telefono)) {
-      errores["persona.telefono"] =
-        "Ingresa un número válido. Ej: 9 1234 5678.";
+    if (!telefono) {
+      errores["persona.telefono"] = "El teléfono es obligatorio.";
+    } else if (!validarTelefono(telefono)) {
+      errores["persona.telefono"] = "Ingresa un número válido. Ej: 9 1234 5678.";
     }
 
-    if (email && !validarEmail(email)) {
+    if (!email) {
+      errores["persona.email"] = "El email es obligatorio.";
+    } else if (!validarEmail(email)) {
       errores["persona.email"] = "Ingresa un correo electrónico válido.";
     }
 
     if (!patente) {
       errores["vehiculo.patente"] = "La patente es obligatoria.";
     } else if (!/^[A-Z0-9-]{4,10}$/.test(patente.toUpperCase())) {
-      errores["vehiculo.patente"] =
-        "La patente debe tener entre 4 y 10 caracteres, solo letras y números.";
+      errores["vehiculo.patente"] = "La patente debe tener entre 4 y 10 caracteres, solo letras y números.";
     }
 
     if (!paisOrigen) {
       errores["vehiculo.pais_origen"] = "El país de origen es obligatorio.";
     } else if (paisOrigen.length < 3) {
-      errores["vehiculo.pais_origen"] =
-        "El país de origen debe tener al menos 3 caracteres.";
+      errores["vehiculo.pais_origen"] = "El país de origen debe tener al menos 3 caracteres.";
     } else if (!soloLetras(paisOrigen)) {
-      errores["vehiculo.pais_origen"] =
-        "El país de origen solo debe contener letras.";
+      errores["vehiculo.pais_origen"] = "El país de origen solo debe contener letras.";
     }
 
     if (!marca) {
@@ -724,8 +815,7 @@ function RegistroPaso({ publico = false }) {
       if (!Number.isInteger(anioNumero)) {
         errores["vehiculo.anio"] = "El año debe ser un número válido.";
       } else if (anioNumero < 1950 || anioNumero > anioActual + 1) {
-        errores["vehiculo.anio"] =
-          `El año debe estar entre 1950 y ${anioActual + 1}.`;
+        errores["vehiculo.anio"] = `El año debe estar entre 1950 y ${anioActual + 1}.`;
       }
     }
 
@@ -734,39 +824,11 @@ function RegistroPaso({ publico = false }) {
     }
 
     if (chasis && chasis.length < 5) {
-      errores["vehiculo.chasis"] =
-        "El número de chasis debe tener al menos 5 caracteres.";
+      errores["vehiculo.chasis"] = "El número de chasis debe tener al menos 5 caracteres.";
     }
 
     if (motor && motor.length < 3) {
-      errores["vehiculo.motor"] =
-        "El número de motor debe tener al menos 3 caracteres.";
-    }
-
-    if (!form.motivo_viaje) {
-      errores["motivo_viaje"] = "El motivo del viaje es obligatorio.";
-    }
-
-    if (form.motivo_viaje === "Otro" && !form.motivo_viaje_otro.trim()) {
-      errores["motivo_viaje_otro"] =
-        "Debes especificar el motivo del viaje.";
-    } else if (
-      form.motivo_viaje === "Otro" &&
-      form.motivo_viaje_otro.trim().length < 3
-    ) {
-      errores["motivo_viaje_otro"] =
-        "El motivo personalizado debe tener al menos 3 caracteres.";
-    }
-
-    if (!destino) {
-      errores["destino"] = "El destino es obligatorio.";
-    } else if (destino.length < 3) {
-      errores["destino"] = "El destino debe tener al menos 3 caracteres.";
-    }
-
-    if (observaciones.length > 300) {
-      errores["declaracion.observaciones"] =
-        "Las observaciones no pueden superar los 300 caracteres.";
+      errores["vehiculo.motor"] = "El número de motor debe tener al menos 3 caracteres.";
     }
 
     (form.menores || []).forEach((menor, index) => {
@@ -774,6 +836,7 @@ function RegistroPaso({ publico = false }) {
       const apellidoMenor = menor.apellido.trim();
       const documentoMenor = menor.documento_numero.trim();
       const nacionalidadMenor = menor.nacionalidad.trim();
+      const nacionalidadOtroMenor = (menor.nacionalidad_otro || "").trim();
       const parentescoMenor = menor.parentesco.trim();
       const autorizacionMenor = menor.autorizacion_viaje.trim();
       const observacionesMenor = menor.observaciones.trim();
@@ -794,19 +857,22 @@ function RegistroPaso({ publico = false }) {
         errores[`menores.${index}.apellido`] = "El apellido solo debe contener letras.";
       }
 
-      if (!documentoMenor) {
-        errores[`menores.${index}.documento_numero`] = "El documento del menor es obligatorio.";
-      } else if (menor.documento_tipo === "RUT" && !validarRutChileno(documentoMenor)) {
-        errores[`menores.${index}.documento_numero`] = "Ingresa un RUT válido para el menor.";
-      } else if (
-        menor.documento_tipo !== "RUT" &&
-        !/^[A-Za-z0-9-]{5,20}$/.test(documentoMenor)
-      ) {
-        errores[`menores.${index}.documento_numero`] = "El documento debe tener entre 5 y 20 caracteres.";
+      const errorDocumentoMenor = validarDocumentoPorTipo(menor.documento_tipo, documentoMenor, "documento del menor");
+
+      if (errorDocumentoMenor) {
+        errores[`menores.${index}.documento_numero`] = errorDocumentoMenor;
       }
 
       if (!nacionalidadMenor) {
         errores[`menores.${index}.nacionalidad`] = "La nacionalidad del menor es obligatoria.";
+      } else if (nacionalidadMenor === "Otra") {
+        if (!nacionalidadOtroMenor) {
+          errores[`menores.${index}.nacionalidad_otro`] = "Debes indicar la nacionalidad del menor.";
+        } else if (nacionalidadOtroMenor.length < 3) {
+          errores[`menores.${index}.nacionalidad_otro`] = "La nacionalidad debe tener al menos 3 caracteres.";
+        } else if (!soloLetras(nacionalidadOtroMenor)) {
+          errores[`menores.${index}.nacionalidad_otro`] = "La nacionalidad no debe contener números ni caracteres especiales.";
+        }
       } else if (!soloLetras(nacionalidadMenor)) {
         errores[`menores.${index}.nacionalidad`] = "La nacionalidad solo debe contener letras.";
       }
@@ -830,47 +896,34 @@ function RegistroPaso({ publico = false }) {
       }
     });
 
-    const documentos = form.documentos || [];
-
-    if (documentos.length > MAX_DOCUMENTOS_TRAMITE) {
-      errores["documentos"] = `Solo se permite adjuntar un máximo de ${MAX_DOCUMENTOS_TRAMITE} documentos.`;
+    if (!form.motivo_viaje) {
+      errores["motivo_viaje"] = "El motivo del viaje es obligatorio.";
     }
 
-    documentos.forEach((documento, index) => {
-      const numeroDocumento = index + 1;
+    if (form.motivo_viaje === "Otro" && !form.motivo_viaje_otro.trim()) {
+      errores["motivo_viaje_otro"] = "Debes especificar el motivo del viaje.";
+    } else if (form.motivo_viaje === "Otro" && form.motivo_viaje_otro.trim().length < 3) {
+      errores["motivo_viaje_otro"] = "El motivo personalizado debe tener al menos 3 caracteres.";
+    }
 
-      if (!documento.tipo_documento) {
-        errores["documentos"] = `Documento ${numeroDocumento}: falta el tipo de documento.`;
-      }
+    if (!destino) {
+      errores["destino"] = "El destino es obligatorio.";
+    } else if (destino.length < 3) {
+      errores["destino"] = "El destino debe tener al menos 3 caracteres.";
+    }
 
-      if (!documento.nombre_archivo) {
-        errores["documentos"] = `Documento ${numeroDocumento}: falta el nombre del archivo.`;
-      }
-
-      if (!tiposArchivosPermitidos.includes(documento.mime_type)) {
-        errores["documentos"] = `Documento ${numeroDocumento}: solo se permiten PDF, JPG, JPEG o PNG.`;
-      }
-
-      if (!documento.tamano || documento.tamano > MAX_TAMANO_DOCUMENTO) {
-        errores["documentos"] = `Documento ${numeroDocumento}: el archivo no puede superar los 2 MB.`;
-      }
-
-      if (!documento.contenido_base64) {
-        errores["documentos"] = `Documento ${numeroDocumento}: el archivo no se cargó correctamente.`;
-      }
-
-      if ((documento.observaciones || "").length > 300) {
-        errores["documentos"] = `Documento ${numeroDocumento}: las observaciones no pueden superar los 300 caracteres.`;
-      }
-    });
+    if (observaciones.length > 300) {
+      errores["declaracion.observaciones"] = "Las observaciones no pueden superar los 300 caracteres.";
+    }
 
     setCamposFaltantes(errores);
 
     if (Object.keys(errores).length > 0) {
+      abrirSeccionesConErrores(errores);
+
       setMensaje({
         tipo: "error",
-        texto:
-          "Faltan datos o existen campos con formato incorrecto. Revisa los campos marcados en rojo."
+        texto: "Faltan datos obligatorios o existen campos con formato incorrecto. Revisa los campos marcados en rojo.",
       });
 
       return false;
@@ -879,57 +932,164 @@ function RegistroPaso({ publico = false }) {
     return true;
   };
 
+  const prepararPersonaParaEnvio = () => {
+    const nacionalidadFinal =
+      form.persona.nacionalidad === "Otra"
+        ? form.persona.nacionalidad_otro.trim()
+        : form.persona.nacionalidad.trim();
+
+    return {
+      ...form.persona,
+      nombre: form.persona.nombre.trim(),
+      apellido: form.persona.apellido.trim(),
+      documento_numero: form.persona.documento_numero.trim(),
+      nacionalidad: nacionalidadFinal,
+      telefono: `${form.persona.prefijo_telefono} ${form.persona.telefono.trim()}`.trim(),
+      email: form.persona.email.trim(),
+    };
+  };
+
+  const prepararMenoresParaEnvio = () => {
+    return (form.menores || []).map((menor) => ({
+      nombre: menor.nombre.trim(),
+      apellido: menor.apellido.trim(),
+      documento_tipo: menor.documento_tipo,
+      documento_numero: menor.documento_numero.trim(),
+      nacionalidad:
+        menor.nacionalidad === "Otra"
+          ? (menor.nacionalidad_otro || "").trim()
+          : menor.nacionalidad.trim(),
+      fecha_nacimiento: menor.fecha_nacimiento,
+      parentesco: menor.parentesco,
+      autorizacion_viaje: menor.autorizacion_viaje,
+      observaciones: menor.observaciones.trim(),
+    }));
+  };
+
   const cargarEscenario = (escenario) => {
     if (!escenario) return;
 
-    const telefonoEscenario = separarTelefonoEscenario(
-      escenario.data.persona?.telefono || ""
-    );
+    const telefonoEscenario = separarTelefonoEscenario(escenario.data.persona?.telefono || "");
+    const nacionalidadPersona = normalizarNacionalidadEscenario(escenario.data.persona?.nacionalidad || "Chilena");
+
+    const menoresEscenario = (escenario.data.menores || []).map((menor) => {
+      const nacionalidadMenor = normalizarNacionalidadEscenario(menor.nacionalidad || "Chilena");
+
+      return {
+        ...menorInicial,
+        ...menor,
+        ...nacionalidadMenor,
+        documento_numero: formatearDocumentoPorTipo(menor.documento_tipo || "RUT", menor.documento_numero || ""),
+      };
+    });
 
     setForm({
+      ...crearFormularioInicial(),
       ...escenario.data,
       persona: {
+        ...crearFormularioInicial().persona,
         ...escenario.data.persona,
-        nacionalidad_otro: "",
+        ...nacionalidadPersona,
+        documento_numero: formatearDocumentoPorTipo(
+          escenario.data.persona?.documento_tipo || "RUT",
+          escenario.data.persona?.documento_numero || ""
+        ),
         prefijo_telefono: telefonoEscenario.prefijo_telefono,
-        telefono: telefonoEscenario.telefono
+        telefono: telefonoEscenario.telefono,
       },
+      vehiculo: {
+        ...crearFormularioInicial().vehiculo,
+        ...(escenario.data.vehiculo || {}),
+      },
+      declaracion: {
+        ...crearFormularioInicial().declaracion,
+        ...(escenario.data.declaracion || {}),
+      },
+      menores: menoresEscenario,
+      documentos: escenario.data.documentos || [],
       motivo_viaje_otro: escenario.data.motivo_viaje_otro || "",
       frontera: "Complejo Los Libertadores",
-      menores: escenario.data.menores || [],
-      documentos: escenario.data.documentos || []
     });
 
     setCamposFaltantes({});
     setComprobante(null);
     setMensajeComprobante("");
+    setSeccionesAbiertas({
+      persona: true,
+      menores: menoresEscenario.length > 0,
+      vehiculo: true,
+      documentos: (escenario.data.documentos || []).length > 0,
+      viaje: true,
+    });
 
     setMensaje({
       tipo: "ok",
-      texto: `Escenario cargado: ${escenario.nombre}. Ahora puedes guardar el registro.`
+      texto: `Escenario cargado: ${escenario.nombre}. Ahora puedes guardar el registro.`,
     });
   };
 
   const limpiarFormulario = () => {
-    setForm(formularioInicial);
-    setObservacionDocumentoAdjunto("");
-    setTipoDocumentoAdjunto("Autorización notarial para menor");
-
-    if (archivoInputRef.current) {
-      archivoInputRef.current.value = "";
-    }
-  };
-
-  const volverAlFormulario = () => {
-    setComprobante(null);
+    setForm(crearFormularioInicial());
+    setCamposFaltantes({});
     setMensaje(null);
     setMensajeComprobante("");
-    setCamposFaltantes({});
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
+    setSeccionesAbiertas({
+      persona: true,
+      menores: false,
+      vehiculo: false,
+      documentos: false,
+      viaje: false,
     });
+  };
+
+  const enviar = async (e) => {
+    e.preventDefault();
+    setMensaje(null);
+    setComprobante(null);
+    setMensajeComprobante("");
+
+    const formularioValido = validarFormulario();
+
+    if (!formularioValido) return;
+
+    setCargando(true);
+
+    try {
+      const response = await api.post("/tramites", {
+        ...form,
+        persona: prepararPersonaParaEnvio(),
+        frontera: "Complejo Los Libertadores",
+        motivo_viaje:
+          form.motivo_viaje === "Otro"
+            ? form.motivo_viaje_otro.trim()
+            : form.motivo_viaje,
+        menores: prepararMenoresParaEnvio(),
+        documentos: form.documentos || [],
+      });
+
+      const codigo = response.data?.codigo_tramite;
+
+      setComprobante({
+        id: response.data?.id,
+        codigo,
+        fecha: new Date().toLocaleString("es-CL"),
+        menores_registrados: response.data?.menores_registrados || 0,
+        documentos_registrados: response.data?.documentos_registrados || 0,
+      });
+
+      setMensaje(null);
+      limpiarFormulario();
+    } catch (error) {
+      setMensaje({
+        tipo: "error",
+        texto:
+          error.response?.data?.errores?.join(" ") ||
+          error.response?.data?.mensaje ||
+          "No se pudo registrar el trámite.",
+      });
+    } finally {
+      setCargando(false);
+    }
   };
 
   const escaparHTML = (texto = "") => {
@@ -954,7 +1114,6 @@ function RegistroPaso({ publico = false }) {
       inputTemporal.select();
       document.execCommand("copy");
       inputTemporal.remove();
-
       setMensajeComprobante("Código copiado correctamente.");
     }
   };
@@ -966,240 +1125,55 @@ function RegistroPaso({ publico = false }) {
   const descargarComprobante = () => {
     if (!comprobante) return;
 
-    const qrSvg =
-      comprobanteRef.current?.querySelector(".qr-box svg")?.outerHTML || "";
+    const qrSvg = comprobanteRef.current?.querySelector(".qr-box svg")?.outerHTML || "";
 
     const contenido = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Comprobante ${escaparHTML(comprobante.codigo)}</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 32px;
-      font-family: Arial, sans-serif;
-      background: #f1f5f9;
-      color: #0f172a;
-    }
-
-    .comprobante {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 32px;
-      border-radius: 24px;
-      background: #ffffff;
-      border: 1px solid #dbeafe;
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      align-items: center;
-    }
-
-    .eyebrow {
-      margin: 0 0 10px;
-      color: #2563eb;
-      font-size: 13px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-    }
-
-    h1 {
-      margin: 0 0 12px;
-      font-size: 36px;
-      color: #0f172a;
-    }
-
-    p {
-      margin: 0 0 16px;
-      color: #475569;
-      line-height: 1.5;
-    }
-
-    .data {
-      display: grid;
-      gap: 8px;
-      color: #0f172a;
-      font-weight: 700;
-    }
-
-    .qr {
-      padding: 18px;
-      border-radius: 20px;
-      border: 1px solid #dbeafe;
-      background: #ffffff;
-    }
-
-    .footer {
-      max-width: 760px;
-      margin: 18px auto 0;
-      color: #64748b;
-      font-size: 13px;
-      text-align: center;
-    }
-
-    @media (max-width: 700px) {
-      body {
-        padding: 18px;
-      }
-
-      .comprobante {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-
-    @media print {
-      body {
-        background: #ffffff;
-      }
-
-      .comprobante {
-        box-shadow: none;
-      }
-    }
-  </style>
-</head>
-
-<body>
-  <section class="comprobante">
-    <div>
-      <p class="eyebrow">Comprobante digital</p>
-      <h1>${escaparHTML(comprobante.codigo)}</h1>
-      <p>Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.</p>
-
-      <div class="data">
-        <span>Fecha: ${escaparHTML(comprobante.fecha)}</span>
-        <span>Estado: En revisión aduanera</span>
-        <span>Sistema: Aduanas Chile</span>
-        <span>Frontera: Complejo Los Libertadores</span>
-        <span>Menores registrados: ${escaparHTML(comprobante.menores_registrados || 0)}</span>
-        <span>Documentos registrados: ${escaparHTML(comprobante.documentos_registrados || 0)}</span>
-      </div>
-    </div>
-
-    <div class="qr">
-      ${qrSvg}
-    </div>
-  </section>
-
-  <p class="footer">
-    Este comprobante fue generado por el Sistema Informático Integrado para Aduanas.
-  </p>
-</body>
-</html>
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Comprobante ${escaparHTML(comprobante.codigo)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f1f5f9; padding: 30px; color: #0f172a; }
+            .ticket { max-width: 760px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 20px; padding: 28px; }
+            .eyebrow { color: #1d4ed8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+            h1 { margin: 10px 0; font-size: 34px; color: #0f172a; }
+            p { line-height: 1.6; color: #334155; }
+            .data { margin-top: 18px; display: grid; gap: 8px; }
+            .data span { padding: 10px 12px; border-radius: 12px; background: #eff6ff; color: #1e3a8a; font-weight: 700; }
+            .qr { margin-top: 24px; padding: 20px; border-radius: 18px; background: #f8fafc; display: inline-block; }
+          </style>
+        </head>
+        <body>
+          <main class="ticket">
+            <div class="eyebrow">Comprobante digital</div>
+            <h1>${escaparHTML(comprobante.codigo)}</h1>
+            <p>Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.</p>
+            <div class="data">
+              <span>Fecha: ${escaparHTML(comprobante.fecha)}</span>
+              <span>Estado: En revisión aduanera</span>
+              <span>Menores registrados: ${escaparHTML(comprobante.menores_registrados || 0)}</span>
+              <span>Documentos registrados: ${escaparHTML(comprobante.documentos_registrados || 0)}</span>
+            </div>
+            <div class="qr">${qrSvg}</div>
+          </main>
+        </body>
+      </html>
     `;
 
-    const blob = new Blob([contenido], {
-      type: "text/html;charset=utf-8"
-    });
-
+    const blob = new Blob([contenido], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-
     link.href = url;
     link.download = `comprobante-${comprobante.codigo}.html`;
     link.click();
-
     URL.revokeObjectURL(url);
-
-    setMensajeComprobante("Comprobante descargado correctamente.");
   };
 
-  const enviar = async (e) => {
-    e.preventDefault();
-    setMensaje(null);
-    setMensajeComprobante("");
+  const volverAlFormulario = () => {
     setComprobante(null);
-
-    const formularioValido = validarFormulario();
-
-    if (!formularioValido) {
-      return;
-    }
-
-    setCargando(true);
-
-    try {
-      const motivoViajeFinal =
-        form.motivo_viaje === "Otro"
-          ? `Otro: ${form.motivo_viaje_otro.trim()}`
-          : form.motivo_viaje;
-
-      const nacionalidadFinal =
-        form.persona.nacionalidad === "Otra"
-          ? form.persona.nacionalidad_otro.trim()
-          : form.persona.nacionalidad;
-
-      const { prefijo_telefono, nacionalidad_otro, ...personaSinPrefijo } = form.persona;
-
-      const telefonoFinal = form.persona.telefono.trim()
-        ? `${form.persona.prefijo_telefono} ${form.persona.telefono.trim()}`
-        : "";
-
-      const response = await api.post("/tramites", {
-        ...form,
-        persona: {
-          ...personaSinPrefijo,
-          nacionalidad: nacionalidadFinal,
-          telefono: telefonoFinal
-        },
-        menores: (form.menores || []).map((menor) => ({
-          nombre: menor.nombre.trim(),
-          apellido: menor.apellido.trim(),
-          documento_tipo: menor.documento_tipo,
-          documento_numero: menor.documento_numero.trim(),
-          nacionalidad: menor.nacionalidad.trim(),
-          fecha_nacimiento: menor.fecha_nacimiento,
-          parentesco: menor.parentesco,
-          autorizacion_viaje: menor.autorizacion_viaje,
-          observaciones: menor.observaciones.trim()
-        })),
-        documentos: (form.documentos || []).map((documento) => ({
-          tipo_documento: documento.tipo_documento,
-          nombre_archivo: documento.nombre_archivo,
-          mime_type: documento.mime_type,
-          tamano: documento.tamano,
-          contenido_base64: documento.contenido_base64,
-          observaciones: documento.observaciones || ""
-        })),
-        motivo_viaje: motivoViajeFinal,
-        frontera: "Complejo Los Libertadores"
-      });
-
-      const codigo = response.data?.codigo_tramite;
-      const riesgo = response.data?.riesgo;
-
-      setMensaje(null);
-
-      setComprobante({
-        id: response.data?.id,
-        codigo,
-        riesgo,
-        fecha: new Date().toLocaleString("es-CL"),
-        menores_registrados: response.data?.menores_registrados || 0,
-        documentos_registrados: response.data?.documentos_registrados || 0
-      });
-
-      limpiarFormulario();
-      setCamposFaltantes({});
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    } catch (error) {
-      setMensaje({
-        tipo: "error",
-        texto:
-          error.response?.data?.mensaje || "No se pudo registrar el trámite."
-      });
-    } finally {
-      setCargando(false);
-    }
+    setMensajeComprobante("");
+    setMensaje(null);
   };
 
   const comprobanteDigital = (
@@ -1208,9 +1182,7 @@ function RegistroPaso({ publico = false }) {
         <div className="qr-ticket-info">
           <p className="eyebrow">Comprobante digital</p>
           <h3>{comprobante?.codigo}</h3>
-          <p>
-            Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.
-          </p>
+          <p>Guarda este código. Aduana podrá usarlo para revisar tu trámite registrado.</p>
 
           <div className="qr-ticket-data">
             <span>Fecha: {comprobante?.fecha}</span>
@@ -1221,12 +1193,7 @@ function RegistroPaso({ publico = false }) {
         </div>
 
         <div className="qr-box">
-          <QRCodeSVG
-            value={comprobante?.codigo || ""}
-            size={150}
-            level="H"
-            includeMargin
-          />
+          <QRCodeSVG value={comprobante?.codigo || ""} size={150} level="H" includeMargin />
         </div>
       </section>
 
@@ -1238,38 +1205,22 @@ function RegistroPaso({ publico = false }) {
       )}
 
       <div className="comprobante-actions">
-        <button
-          type="button"
-          className="comprobante-action-btn"
-          onClick={copiarCodigoComprobante}
-        >
+        <button type="button" className="comprobante-action-btn" onClick={copiarCodigoComprobante}>
           <Copy size={18} />
           Copiar código
         </button>
 
-        <button
-          type="button"
-          className="comprobante-action-btn"
-          onClick={imprimirComprobante}
-        >
+        <button type="button" className="comprobante-action-btn" onClick={imprimirComprobante}>
           <Printer size={18} />
           Imprimir
         </button>
 
-        <button
-          type="button"
-          className="comprobante-action-btn"
-          onClick={descargarComprobante}
-        >
+        <button type="button" className="comprobante-action-btn" onClick={descargarComprobante}>
           <Download size={18} />
           Descargar
         </button>
 
-        <button
-          type="button"
-          className="comprobante-action-btn comprobante-back-btn"
-          onClick={volverAlFormulario}
-        >
+        <button type="button" className="comprobante-action-btn comprobante-back-btn" onClick={volverAlFormulario}>
           <ArrowLeft size={18} />
           Volver al formulario
         </button>
@@ -1279,64 +1230,67 @@ function RegistroPaso({ publico = false }) {
 
   const formularioRegistro = (
     <form className="form-page" onSubmit={enviar} noValidate>
-      <section className="panel-card form-section">
-        <div className="form-section-title">
-          <ClipboardList size={22} />
-          <h2>Datos de la persona</h2>
-        </div>
+      <div className="required-help-text">
+        Los campos marcados con <span className="required-star">*</span> son obligatorios.
+      </div>
 
+      <SeccionDesplegable
+        id="persona"
+        className="person-form-section"
+        titulo="Datos de la persona"
+        icono={<ClipboardList size={22} />}
+        abierto={seccionesAbiertas.persona}
+        onToggle={toggleSeccion}
+      >
         <div className="form-grid">
           <label>
-            Nombre
+            <EtiquetaCampo requerido>Nombre</EtiquetaCampo>
             <input
               className={marcarCampo("persona.nombre")}
               value={form.persona.nombre}
-              onChange={(e) => cambiar("persona", "nombre", e.target.value)}
+              onChange={(e) => cambiar("persona", "nombre", limpiarTextoSoloLetras(e.target.value))}
               placeholder="Ej: Carlos"
             />
             {mostrarError("persona.nombre")}
           </label>
 
           <label>
-            Apellido
+            <EtiquetaCampo requerido>Apellido</EtiquetaCampo>
             <input
               className={marcarCampo("persona.apellido")}
               value={form.persona.apellido}
-              onChange={(e) => cambiar("persona", "apellido", e.target.value)}
+              onChange={(e) => cambiar("persona", "apellido", limpiarTextoSoloLetras(e.target.value))}
               placeholder="Ej: Soto"
             />
             {mostrarError("persona.apellido")}
           </label>
 
           <label>
-            Tipo de documento
-            <select
-              value={form.persona.documento_tipo}
-              onChange={(e) => cambiarTipoDocumento(e.target.value)}
-            >
+            <EtiquetaCampo requerido>Tipo de documento</EtiquetaCampo>
+            <select value={form.persona.documento_tipo} onChange={(e) => cambiarTipoDocumentoPersona(e.target.value)}>
               <option value="RUT">RUT</option>
-              <option value="Pasaporte">Pasaporte</option>
               <option value="DNI">DNI</option>
+              <option value="Pasaporte">Pasaporte</option>
             </select>
           </label>
 
           <label>
-            Número de documento
+            <EtiquetaCampo requerido>Número de documento</EtiquetaCampo>
             <input
               className={marcarCampo("persona.documento_numero")}
               value={form.persona.documento_numero}
-              onChange={(e) => cambiarDocumento(e.target.value)}
+              onChange={(e) => cambiarDocumentoPersona(e.target.value)}
               placeholder={obtenerPlaceholderDocumento(form.persona.documento_tipo)}
             />
             {mostrarError("persona.documento_numero")}
           </label>
 
           <label>
-            Nacionalidad
+            <EtiquetaCampo requerido>Nacionalidad</EtiquetaCampo>
             <select
               className={marcarCampo("persona.nacionalidad")}
               value={form.persona.nacionalidad}
-              onChange={(e) => cambiarNacionalidad(e.target.value)}
+              onChange={(e) => cambiar("persona", "nacionalidad", e.target.value)}
             >
               {nacionalidades.map((nacionalidad) => (
                 <option key={nacionalidad} value={nacionalidad}>
@@ -1348,31 +1302,23 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           {form.persona.nacionalidad === "Otra" && (
-            <label className="otro-motivo-field">
-              Indique su nacionalidad
+            <label>
+              <EtiquetaCampo requerido>Indique nacionalidad</EtiquetaCampo>
               <input
                 className={marcarCampo("persona.nacionalidad_otro")}
                 value={form.persona.nacionalidad_otro}
-                onChange={(e) =>
-                  cambiar(
-                    "persona",
-                    "nacionalidad_otro",
-                    limpiarTextoSoloLetras(e.target.value)
-                  )
-                }
-                placeholder="Ej: Cubana, Hondureña, Panameña"
+                onChange={(e) => cambiar("persona", "nacionalidad_otro", limpiarTextoSoloLetras(e.target.value))}
+                placeholder="Ej: Cubana"
               />
               {mostrarError("persona.nacionalidad_otro")}
             </label>
           )}
 
           <label>
-            Fecha de nacimiento
+            <EtiquetaCampo requerido>Fecha de nacimiento</EtiquetaCampo>
             <DatePicker
               selected={convertirFechaParaInput(form.persona.fecha_nacimiento)}
-              onChange={(fecha) =>
-                cambiar("persona", "fecha_nacimiento", convertirFechaParaBD(fecha))
-              }
+              onChange={(fecha) => cambiar("persona", "fecha_nacimiento", convertirFechaParaBD(fecha))}
               dateFormat="dd/MM/yyyy"
               locale={es}
               placeholderText="dd/mm/aaaa"
@@ -1387,8 +1333,8 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           <label>
-            Teléfono
-            <div className="phone-field">
+            <EtiquetaCampo requerido>Teléfono</EtiquetaCampo>
+            <div className="phone-row">
               <select
                 value={form.persona.prefijo_telefono}
                 onChange={(e) => cambiar("persona", "prefijo_telefono", e.target.value)}
@@ -1403,7 +1349,7 @@ function RegistroPaso({ publico = false }) {
               <input
                 className={marcarCampo("persona.telefono")}
                 value={form.persona.telefono}
-                onChange={(e) => cambiar("persona", "telefono", e.target.value)}
+                onChange={(e) => cambiar("persona", "telefono", e.target.value.replace(/[^0-9\s-]/g, ""))}
                 placeholder="Ej: 9 1234 5678"
               />
             </div>
@@ -1411,7 +1357,7 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           <label>
-            Email
+            <EtiquetaCampo requerido>Email</EtiquetaCampo>
             <input
               className={marcarCampo("persona.email")}
               type="email"
@@ -1422,30 +1368,23 @@ function RegistroPaso({ publico = false }) {
             {mostrarError("persona.email")}
           </label>
         </div>
-      </section>
+      </SeccionDesplegable>
 
-      <section className="panel-card form-section minors-form-section">
-        <div className="form-section-title minors-section-title">
-          <Users size={22} />
-          <div>
-            <h2>Menores acompañantes</h2>
-            <p>
-              Si viajas con menores de edad, agrégalos al mismo trámite para que
-              Aduanas pueda revisarlos junto al adulto responsable.
-            </p>
-          </div>
-        </div>
-
+      <SeccionDesplegable
+        id="menores"
+        className="minors-form-section"
+        titulo="Menores acompañantes"
+        descripcion="Si viajas con menores de edad, agrégalos al mismo trámite para que Aduanas pueda revisarlos junto al adulto responsable."
+        icono={<Users size={22} />}
+        abierto={seccionesAbiertas.menores}
+        onToggle={toggleSeccion}
+      >
         {(form.menores || []).length === 0 ? (
           <div className="minor-empty-register">
             <p>No has agregado menores acompañantes.</p>
-
-            <button
-              type="button"
-              className="secondary-action-btn"
-              onClick={agregarMenor}
-            >
-              + Agregar menor acompañante
+            <button type="button" className="secondary-action-btn" onClick={agregarMenor}>
+              <Plus size={17} />
+              Agregar menor acompañante
             </button>
           </div>
         ) : (
@@ -1460,11 +1399,7 @@ function RegistroPaso({ publico = false }) {
                     </strong>
                   </div>
 
-                  <button
-                    type="button"
-                    className="remove-minor-btn"
-                    onClick={() => eliminarMenor(index)}
-                  >
+                  <button type="button" className="remove-minor-btn" onClick={() => eliminarMenor(index)}>
                     <Trash2 size={16} />
                     Eliminar
                   </button>
@@ -1472,41 +1407,38 @@ function RegistroPaso({ publico = false }) {
 
                 <div className="form-grid">
                   <label>
-                    Nombre del menor
+                    <EtiquetaCampo requerido>Nombre del menor</EtiquetaCampo>
                     <input
                       className={marcarCampo(`menores.${index}.nombre`)}
                       value={menor.nombre}
-                      onChange={(e) => cambiarMenor(index, "nombre", e.target.value)}
+                      onChange={(e) => cambiarMenor(index, "nombre", limpiarTextoSoloLetras(e.target.value))}
                       placeholder="Ej: Sofía"
                     />
                     {mostrarError(`menores.${index}.nombre`)}
                   </label>
 
                   <label>
-                    Apellido del menor
+                    <EtiquetaCampo requerido>Apellido del menor</EtiquetaCampo>
                     <input
                       className={marcarCampo(`menores.${index}.apellido`)}
                       value={menor.apellido}
-                      onChange={(e) => cambiarMenor(index, "apellido", e.target.value)}
+                      onChange={(e) => cambiarMenor(index, "apellido", limpiarTextoSoloLetras(e.target.value))}
                       placeholder="Ej: González"
                     />
                     {mostrarError(`menores.${index}.apellido`)}
                   </label>
 
                   <label>
-                    Tipo de documento
-                    <select
-                      value={menor.documento_tipo}
-                      onChange={(e) => cambiarTipoDocumentoMenor(index, e.target.value)}
-                    >
+                    <EtiquetaCampo requerido>Tipo de documento</EtiquetaCampo>
+                    <select value={menor.documento_tipo} onChange={(e) => cambiarTipoDocumentoMenor(index, e.target.value)}>
                       <option value="RUT">RUT</option>
-                      <option value="Pasaporte">Pasaporte</option>
                       <option value="DNI">DNI</option>
+                      <option value="Pasaporte">Pasaporte</option>
                     </select>
                   </label>
 
                   <label>
-                    Número de documento
+                    <EtiquetaCampo requerido>Número de documento</EtiquetaCampo>
                     <input
                       className={marcarCampo(`menores.${index}.documento_numero`)}
                       value={menor.documento_numero}
@@ -1517,33 +1449,39 @@ function RegistroPaso({ publico = false }) {
                   </label>
 
                   <label>
-                    Nacionalidad
-                    <input
+                    <EtiquetaCampo requerido>Nacionalidad</EtiquetaCampo>
+                    <select
                       className={marcarCampo(`menores.${index}.nacionalidad`)}
                       value={menor.nacionalidad}
-                      onChange={(e) =>
-                        cambiarMenor(
-                          index,
-                          "nacionalidad",
-                          limpiarTextoSoloLetras(e.target.value)
-                        )
-                      }
-                      placeholder="Ej: Chilena"
-                    />
+                      onChange={(e) => cambiarMenor(index, "nacionalidad", e.target.value)}
+                    >
+                      {nacionalidades.map((nacionalidad) => (
+                        <option key={nacionalidad} value={nacionalidad}>
+                          {nacionalidad}
+                        </option>
+                      ))}
+                    </select>
                     {mostrarError(`menores.${index}.nacionalidad`)}
                   </label>
 
+                  {menor.nacionalidad === "Otra" && (
+                    <label>
+                      <EtiquetaCampo requerido>Indique nacionalidad</EtiquetaCampo>
+                      <input
+                        className={marcarCampo(`menores.${index}.nacionalidad_otro`)}
+                        value={menor.nacionalidad_otro || ""}
+                        onChange={(e) => cambiarMenor(index, "nacionalidad_otro", limpiarTextoSoloLetras(e.target.value))}
+                        placeholder="Ej: Cubana"
+                      />
+                      {mostrarError(`menores.${index}.nacionalidad_otro`)}
+                    </label>
+                  )}
+
                   <label>
-                    Fecha de nacimiento
+                    <EtiquetaCampo requerido>Fecha de nacimiento</EtiquetaCampo>
                     <DatePicker
                       selected={convertirFechaParaInput(menor.fecha_nacimiento)}
-                      onChange={(fecha) =>
-                        cambiarMenor(
-                          index,
-                          "fecha_nacimiento",
-                          convertirFechaParaBD(fecha)
-                        )
-                      }
+                      onChange={(fecha) => cambiarMenor(index, "fecha_nacimiento", convertirFechaParaBD(fecha))}
                       dateFormat="dd/MM/yyyy"
                       locale={es}
                       placeholderText="dd/mm/aaaa"
@@ -1551,16 +1489,14 @@ function RegistroPaso({ publico = false }) {
                       showYearDropdown
                       dropdownMode="select"
                       maxDate={new Date()}
-                      className={`date-picker-input ${marcarCampo(
-                        `menores.${index}.fecha_nacimiento`
-                      )}`}
+                      className={`date-picker-input ${marcarCampo(`menores.${index}.fecha_nacimiento`)}`}
                       calendarClassName="aduanas-calendar"
                     />
                     {mostrarError(`menores.${index}.fecha_nacimiento`)}
                   </label>
 
                   <label>
-                    Parentesco o relación
+                    <EtiquetaCampo requerido>Parentesco o relación</EtiquetaCampo>
                     <select
                       className={marcarCampo(`menores.${index}.parentesco`)}
                       value={menor.parentesco}
@@ -1577,33 +1513,25 @@ function RegistroPaso({ publico = false }) {
                   </label>
 
                   <label>
-                    Autorización o documento de viaje
+                    <EtiquetaCampo requerido>Autorización o documento de viaje</EtiquetaCampo>
                     <select
                       className={marcarCampo(`menores.${index}.autorizacion_viaje`)}
                       value={menor.autorizacion_viaje}
-                      onChange={(e) =>
-                        cambiarMenor(index, "autorizacion_viaje", e.target.value)
-                      }
+                      onChange={(e) => cambiarMenor(index, "autorizacion_viaje", e.target.value)}
                     >
-                      <option value="Presenta autorización de viaje">
-                        Presenta autorización de viaje
-                      </option>
-                      <option value="Viaja con ambos padres">
-                        Viaja con ambos padres
-                      </option>
-                      <option value="Documento pendiente de revisión">
-                        Documento pendiente de revisión
-                      </option>
+                      <option value="Presenta autorización de viaje">Presenta autorización de viaje</option>
+                      <option value="Viaja con ambos padres">Viaja con ambos padres</option>
+                      <option value="Documento pendiente de revisión">Documento pendiente de revisión</option>
                       <option value="No aplica">No aplica</option>
                     </select>
                     {mostrarError(`menores.${index}.autorizacion_viaje`)}
                   </label>
 
                   <label className="minor-observations-field">
-                    Observaciones del menor
+                    <EtiquetaCampo>Observaciones del menor</EtiquetaCampo>
                     <textarea
                       className={marcarCampo(`menores.${index}.observaciones`)}
-                      placeholder="Ej: viaja con autorización notarial o documento adicional."
+                      placeholder="Opcional"
                       value={menor.observaciones}
                       onChange={(e) => cambiarMenor(index, "observaciones", e.target.value)}
                       maxLength={300}
@@ -1614,30 +1542,26 @@ function RegistroPaso({ publico = false }) {
               </article>
             ))}
 
-            <button
-              type="button"
-              className="secondary-action-btn"
-              onClick={agregarMenor}
-            >
-              + Agregar otro menor
+            <button type="button" className="secondary-action-btn" onClick={agregarMenor}>
+              <Plus size={17} />
+              Agregar otro menor
             </button>
           </div>
         )}
-      </section>
+      </SeccionDesplegable>
 
-      <section className="panel-card form-section">
-        <div className="form-section-title">
-          <ClipboardList size={22} />
-          <h2>Datos del vehículo</h2>
-        </div>
-
+      <SeccionDesplegable
+        id="vehiculo"
+        className="vehicle-form-section"
+        titulo="Datos del vehículo"
+        icono={<ClipboardList size={22} />}
+        abierto={seccionesAbiertas.vehiculo}
+        onToggle={toggleSeccion}
+      >
         <div className="form-grid">
           <label>
-            Tipo de vehículo
-            <select
-              value={form.vehiculo.tipo}
-              onChange={(e) => cambiar("vehiculo", "tipo", e.target.value)}
-            >
+            <EtiquetaCampo requerido>Tipo de vehículo</EtiquetaCampo>
+            <select value={form.vehiculo.tipo} onChange={(e) => cambiar("vehiculo", "tipo", e.target.value)}>
               <option value="Particular">Particular</option>
               <option value="Carga">Carga</option>
               <option value="Bus">Bus</option>
@@ -1646,7 +1570,7 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           <label>
-            Patente
+            <EtiquetaCampo requerido>Patente</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.patente")}
               value={form.vehiculo.patente}
@@ -1657,18 +1581,18 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           <label>
-            País de origen
+            <EtiquetaCampo requerido>País de origen</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.pais_origen")}
               value={form.vehiculo.pais_origen}
-              onChange={(e) => cambiar("vehiculo", "pais_origen", e.target.value)}
+              onChange={(e) => cambiar("vehiculo", "pais_origen", limpiarTextoSoloLetras(e.target.value))}
               placeholder="Ej: Chile"
             />
             {mostrarError("vehiculo.pais_origen")}
           </label>
 
           <label>
-            Marca
+            <EtiquetaCampo requerido>Marca</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.marca")}
               value={form.vehiculo.marca}
@@ -1679,7 +1603,7 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           <label>
-            Modelo
+            <EtiquetaCampo requerido>Modelo</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.modelo")}
               value={form.vehiculo.modelo}
@@ -1690,7 +1614,7 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           <label>
-            Año
+            <EtiquetaCampo>Año</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.anio")}
               type="number"
@@ -1698,24 +1622,24 @@ function RegistroPaso({ publico = false }) {
               max="2030"
               value={form.vehiculo.anio}
               onChange={(e) => cambiar("vehiculo", "anio", e.target.value)}
-              placeholder="Ej: 2020"
+              placeholder="Opcional"
             />
             {mostrarError("vehiculo.anio")}
           </label>
 
           <label>
-            Color
+            <EtiquetaCampo>Color</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.color")}
               value={form.vehiculo.color}
-              onChange={(e) => cambiar("vehiculo", "color", e.target.value)}
-              placeholder="Ej: Blanco"
+              onChange={(e) => cambiar("vehiculo", "color", limpiarTextoSoloLetras(e.target.value))}
+              placeholder="Opcional"
             />
             {mostrarError("vehiculo.color")}
           </label>
 
           <label>
-            Número de chasis
+            <EtiquetaCampo>Número de chasis</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.chasis")}
               value={form.vehiculo.chasis}
@@ -1726,7 +1650,7 @@ function RegistroPaso({ publico = false }) {
           </label>
 
           <label>
-            Número de motor
+            <EtiquetaCampo>Número de motor</EtiquetaCampo>
             <input
               className={marcarCampo("vehiculo.motor")}
               value={form.vehiculo.motor}
@@ -1736,28 +1660,22 @@ function RegistroPaso({ publico = false }) {
             {mostrarError("vehiculo.motor")}
           </label>
         </div>
-      </section>
+      </SeccionDesplegable>
 
-      <section className="panel-card form-section documents-form-section">
-        <div className="form-section-title documents-section-title">
-          <FileText size={22} />
-          <div>
-            <h2>Documentos adjuntos</h2>
-            <p>
-              Adjunta autorizaciones notariales, certificados o documentos que
-              puedan ser solicitados durante el control aduanero.
-            </p>
-          </div>
-        </div>
-
+      <SeccionDesplegable
+        id="documentos"
+        className="documents-form-section"
+        titulo="Documentos adjuntos"
+        descripcion="Adjunta autorizaciones notariales, certificados o documentos que puedan ser solicitados durante el control aduanero."
+        icono={<FileText size={22} />}
+        abierto={seccionesAbiertas.documentos}
+        onToggle={toggleSeccion}
+      >
         <div className="documents-upload-panel">
           <div className="form-grid">
             <label>
-              Tipo de documento
-              <select
-                value={tipoDocumentoAdjunto}
-                onChange={(e) => setTipoDocumentoAdjunto(e.target.value)}
-              >
+              <EtiquetaCampo>Tipo de documento</EtiquetaCampo>
+              <select value={tipoDocumentoAdjunto} onChange={(e) => setTipoDocumentoAdjunto(e.target.value)}>
                 {tiposDocumentosAdjuntos.map((tipo) => (
                   <option key={tipo} value={tipo}>
                     {tipo}
@@ -1767,11 +1685,11 @@ function RegistroPaso({ publico = false }) {
             </label>
 
             <label>
-              Observaciones del documento
+              <EtiquetaCampo>Observaciones del documento</EtiquetaCampo>
               <input
                 value={observacionDocumentoAdjunto}
                 onChange={(e) => setObservacionDocumentoAdjunto(e.target.value)}
-                placeholder="Ej: autorización notarial del menor"
+                placeholder="Opcional"
                 maxLength={300}
               />
             </label>
@@ -1795,11 +1713,7 @@ function RegistroPaso({ publico = false }) {
 
           {mostrarError("documentos")}
 
-          {procesandoDocumento && (
-            <div className="document-upload-message">
-              Cargando documento...
-            </div>
-          )}
+          {procesandoDocumento && <div className="document-upload-message">Cargando documento...</div>}
         </div>
 
         {(form.documentos || []).length > 0 ? (
@@ -1814,17 +1728,11 @@ function RegistroPaso({ publico = false }) {
                     <small>
                       {documento.mime_type} · {formatearTamanoArchivo(documento.tamano)}
                     </small>
-                    {documento.observaciones && (
-                      <p>{documento.observaciones}</p>
-                    )}
+                    {documento.observaciones && <p>{documento.observaciones}</p>}
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="remove-document-btn"
-                  onClick={() => eliminarDocumentoAdjunto(index)}
-                >
+                <button type="button" className="remove-document-btn" onClick={() => eliminarDocumentoAdjunto(index)}>
                   <Trash2 size={16} />
                   Eliminar
                 </button>
@@ -1836,22 +1744,20 @@ function RegistroPaso({ publico = false }) {
             No has adjuntado documentos. Puedes continuar sin archivos si no corresponde.
           </div>
         )}
-      </section>
+      </SeccionDesplegable>
 
-      <section className="panel-card form-section">
-        <div className="form-section-title">
-          <ShieldCheck size={22} />
-          <h2>Declaración y viaje</h2>
-        </div>
-
+      <SeccionDesplegable
+        id="viaje"
+        className="travel-form-section"
+        titulo="Declaración y viaje"
+        icono={<ShieldCheck size={22} />}
+        abierto={seccionesAbiertas.viaje}
+        onToggle={toggleSeccion}
+      >
         <div className="form-grid">
           <label>
-            Motivo del viaje
-            <select
-              className={marcarCampo("motivo_viaje")}
-              value={form.motivo_viaje}
-              onChange={(e) => cambiarMotivoViaje(e.target.value)}
-            >
+            <EtiquetaCampo requerido>Motivo del viaje</EtiquetaCampo>
+            <select className={marcarCampo("motivo_viaje")} value={form.motivo_viaje} onChange={(e) => cambiarMotivoViaje(e.target.value)}>
               <option value="Turismo">Turismo</option>
               <option value="Trabajo">Trabajo</option>
               <option value="Comercio">Comercio</option>
@@ -1863,7 +1769,7 @@ function RegistroPaso({ publico = false }) {
 
           {form.motivo_viaje === "Otro" && (
             <label className="otro-motivo-field">
-              Especifique el motivo del viaje
+              <EtiquetaCampo requerido>Especifique el motivo del viaje</EtiquetaCampo>
               <input
                 type="text"
                 placeholder="Ej: visita familiar, estudio, trámite personal"
@@ -1876,23 +1782,19 @@ function RegistroPaso({ publico = false }) {
           )}
 
           <label>
-            Destino
+            <EtiquetaCampo requerido>Destino</EtiquetaCampo>
             <input
               className={marcarCampo("destino")}
               value={form.destino}
-              onChange={(e) => cambiarSimple("destino", e.target.value)}
+              onChange={(e) => cambiarSimple("destino", limpiarTextoSoloLetras(e.target.value))}
               placeholder="Ej: Argentina"
             />
             {mostrarError("destino")}
           </label>
 
           <label>
-            Frontera
-            <input
-              value="Complejo Los Libertadores"
-              readOnly
-              className="readonly-input"
-            />
+            <EtiquetaCampo requerido>Frontera</EtiquetaCampo>
+            <input value="Complejo Los Libertadores" readOnly className="readonly-input" />
           </label>
         </div>
 
@@ -1934,15 +1836,18 @@ function RegistroPaso({ publico = false }) {
           </label>
         </div>
 
-        <textarea
-          className={marcarCampo("declaracion.observaciones")}
-          placeholder="Observaciones adicionales"
-          value={form.declaracion.observaciones}
-          onChange={(e) => cambiar("declaracion", "observaciones", e.target.value)}
-          maxLength={300}
-        />
-        {mostrarError("declaracion.observaciones")}
-      </section>
+        <label className="full-width-label">
+          <EtiquetaCampo>Observaciones adicionales</EtiquetaCampo>
+          <textarea
+            className={marcarCampo("declaracion.observaciones")}
+            placeholder="Opcional"
+            value={form.declaracion.observaciones}
+            onChange={(e) => cambiar("declaracion", "observaciones", e.target.value)}
+            maxLength={300}
+          />
+          {mostrarError("declaracion.observaciones")}
+        </label>
+      </SeccionDesplegable>
 
       {mensaje && (
         <div className={`alert ${mensaje.tipo === "ok" ? "alert-success" : "alert-error"}`}>
@@ -1967,8 +1872,8 @@ function RegistroPaso({ publico = false }) {
             <p className="eyebrow">Sistema Integrado de Gestión Aduanera</p>
             <h1>Registro de paso fronterizo</h1>
             <p>
-              Completa tus datos personales, información del vehículo, menores acompañantes, documentos adjuntos
-              si corresponde y declaración jurada para que Aduanas pueda revisar tu solicitud.
+              Completa tus datos personales, información del vehículo, menores acompañantes,
+              documentos adjuntos si corresponde y declaración jurada para que Aduanas pueda revisar tu solicitud.
             </p>
           </div>
 
@@ -1989,19 +1894,14 @@ function RegistroPaso({ publico = false }) {
             <div>
               <p className="eyebrow">Herramientas de prueba</p>
               <h2>Escenarios rápidos</h2>
-              <p>
-                Carga datos automáticamente para probar distintos casos de validación aduanera.
-              </p>
+              <p>Carga datos automáticamente para probar distintos casos de validación aduanera.</p>
             </div>
 
             <div className="testing-tools-actions">
               <select
                 defaultValue=""
                 onChange={(e) => {
-                  const escenario = escenariosPrueba.find(
-                    (item) => item.nombre === e.target.value
-                  );
-
+                  const escenario = escenariosPrueba.find((item) => item.nombre === e.target.value);
                   cargarEscenario(escenario);
                   e.target.value = "";
                 }}

@@ -1669,3 +1669,118 @@
 .public-register-page:not(.dark-register) .remove-document-btn:hover {
   background: #fecaca !important;
 }
+
+/* ===== Secciones desplegables y campos obligatorios ===== */
+.required-help-text {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(37, 99, 235, 0.10);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  color: #bfdbfe;
+  font-weight: 800;
+}
+
+.public-register-page:not(.dark-register) .required-help-text {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.required-star {
+  color: #ef4444;
+  font-weight: 950;
+}
+
+.field-label-text {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.collapsible-form-section {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.collapsible-section-header {
+  width: 100%;
+  min-height: 82px;
+  padding: 26px 30px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.collapsible-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.collapsible-icon-box {
+  color: #60a5fa;
+  margin-top: 5px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.collapsible-section-header h2 {
+  margin: 0;
+}
+
+.collapsible-section-header p {
+  margin: 8px 0 0;
+  color: #93a9cf;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.collapsible-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.collapsible-form-section.is-open .collapsible-chevron {
+  transform: rotate(180deg);
+}
+
+.collapsible-section-body {
+  padding: 0 30px 30px;
+  border-top: 1px solid rgba(148, 163, 184, 0.20);
+  padding-top: 24px;
+}
+
+.public-register-page:not(.dark-register) .collapsible-section-header p {
+  color: #475569;
+}
+
+.public-register-page:not(.dark-register) .collapsible-section-body {
+  border-top-color: #e2e8f0;
+}
+
+.full-width-label {
+  display: grid;
+  margin-top: 18px;
+}
+
+@media (max-width: 700px) {
+  .collapsible-section-header {
+    padding: 22px 20px;
+    align-items: flex-start;
+  }
+
+  .collapsible-section-body {
+    padding: 0 20px 22px;
+    padding-top: 20px;
+  }
+
+  .collapsible-title-row {
+    gap: 10px;
+  }
+}

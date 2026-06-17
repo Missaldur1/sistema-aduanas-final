@@ -40,7 +40,6 @@ const soloLetras = (texto = "") => {
 };
 
 const validarEmail = (email = "") => {
-  if (!email) return true;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
@@ -51,6 +50,10 @@ const limpiarRut = (rut = "") => {
     .replace(/-/g, "")
     .replace(/\s/g, "")
     .toUpperCase();
+};
+
+const limpiarSoloNumeros = (valor = "") => {
+  return valor.toString().replace(/\D/g, "");
 };
 
 const validarRutChileno = (rut = "") => {
@@ -77,16 +80,28 @@ const validarRutChileno = (rut = "") => {
 };
 
 const formatearRut = (rut = "") => {
-  const rutLimpio = limpiarRut(rut);
+  const rutLimpio = limpiarRut(rut).slice(0, 9);
 
   if (rutLimpio.length <= 1) return rutLimpio;
 
   const cuerpo = rutLimpio.slice(0, -1);
   const dv = rutLimpio.slice(-1);
-
   const cuerpoFormateado = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
   return `${cuerpoFormateado}-${dv}`;
+};
+
+const formatearDNI = (dni = "") => {
+  const dniLimpio = limpiarSoloNumeros(dni).slice(0, 8);
+  return dniLimpio.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const normalizarPasaporte = (pasaporte = "") => {
+  return pasaporte
+    .toString()
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase()
+    .slice(0, 9);
 };
 
 const normalizarDocumento = (tipo = "", numero = "") => {
@@ -96,7 +111,70 @@ const normalizarDocumento = (tipo = "", numero = "") => {
     return formatearRut(numero);
   }
 
+  if (tipoDocumento === "DNI") {
+    return formatearDNI(numero);
+  }
+
+  if (tipoDocumento === "Pasaporte") {
+    return normalizarPasaporte(numero);
+  }
+
   return limpiarTexto(numero).toUpperCase();
+};
+
+const validarDocumentoIdentidad = (tipo = "", numero = "", etiqueta = "El documento") => {
+  const errores = [];
+  const tipoDocumento = limpiarTexto(tipo);
+  const documentoNumero = limpiarTexto(numero);
+
+  if (!documentoNumero) {
+    errores.push(`${etiqueta} es obligatorio.`);
+    return errores;
+  }
+
+  if (tipoDocumento === "RUT") {
+    const rutLimpio = limpiarRut(documentoNumero);
+
+    if (!/^[0-9]{7,8}[0-9K]$/.test(rutLimpio)) {
+      errores.push(`${etiqueta} debe tener 8 o 9 caracteres incluyendo dígito verificador.`);
+    } else if (!validarRutChileno(documentoNumero)) {
+      errores.push(`${etiqueta} RUT no es válido.`);
+    }
+
+    return errores;
+  }
+
+  if (tipoDocumento === "DNI") {
+    const dniLimpio = limpiarSoloNumeros(documentoNumero);
+
+    if (!/^\d{7,8}$/.test(dniLimpio)) {
+      errores.push(`${etiqueta} DNI debe tener mínimo 7 y máximo 8 números.`);
+    }
+
+    return errores;
+  }
+
+  if (tipoDocumento === "Pasaporte") {
+    const pasaporteNormalizado = normalizarPasaporte(documentoNumero);
+
+    if (!/^[A-Z0-9]{6,9}$/.test(pasaporteNormalizado)) {
+      errores.push(`${etiqueta} pasaporte debe tener entre 6 y 9 caracteres alfanuméricos.`);
+    }
+
+    return errores;
+  }
+
+  errores.push(`${etiqueta} tiene un tipo de documento no válido.`);
+  return errores;
+};
+
+const validarTelefono = (telefono = "") => {
+  const telefonoTexto = limpiarTexto(telefono);
+  const soloNumeros = telefonoTexto.replace(/\D/g, "");
+
+  return /^[0-9+\s()\-]{6,25}$/.test(telefonoTexto) &&
+    soloNumeros.length >= 7 &&
+    soloNumeros.length <= 15;
 };
 
 const normalizarPatente = (patente = "") => {
@@ -109,7 +187,7 @@ const normalizarPatente = (patente = "") => {
 };
 
 const validarFechaNoFutura = (fechaTexto = "") => {
-  if (!fechaTexto) return true;
+  if (!fechaTexto) return false;
 
   const fecha = new Date(fechaTexto);
   const hoy = new Date();
@@ -117,6 +195,23 @@ const validarFechaNoFutura = (fechaTexto = "") => {
   if (Number.isNaN(fecha.getTime())) return false;
 
   return fecha <= hoy;
+};
+
+const calcularEdad = (fechaTexto = "") => {
+  if (!fechaTexto) return null;
+
+  const fecha = new Date(fechaTexto);
+  if (Number.isNaN(fecha.getTime())) return null;
+
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - fecha.getFullYear();
+  const mes = hoy.getMonth() - fecha.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+    edad -= 1;
+  }
+
+  return edad;
 };
 
 const validarMenores = (menores = []) => {
@@ -139,73 +234,54 @@ const validarMenores = (menores = []) => {
     const observaciones = limpiarTexto(menor.observaciones);
 
     if (nombre.length < 2) {
-      errores.push(
-        `Menor ${numeroMenor}: el nombre debe tener al menos 2 caracteres.`
-      );
+      errores.push(`Menor ${numeroMenor}: el nombre debe tener al menos 2 caracteres.`);
+    } else if (!soloLetras(nombre)) {
+      errores.push(`Menor ${numeroMenor}: el nombre solo puede contener letras.`);
     }
 
     if (apellido.length < 2) {
-      errores.push(
-        `Menor ${numeroMenor}: el apellido debe tener al menos 2 caracteres.`
-      );
-    }
-
-    if (nombre && !soloLetras(nombre)) {
-      errores.push(
-        `Menor ${numeroMenor}: el nombre solo puede contener letras.`
-      );
-    }
-
-    if (apellido && !soloLetras(apellido)) {
-      errores.push(
-        `Menor ${numeroMenor}: el apellido solo puede contener letras.`
-      );
+      errores.push(`Menor ${numeroMenor}: el apellido debe tener al menos 2 caracteres.`);
+    } else if (!soloLetras(apellido)) {
+      errores.push(`Menor ${numeroMenor}: el apellido solo puede contener letras.`);
     }
 
     if (!["RUT", "Pasaporte", "DNI"].includes(documentoTipo)) {
       errores.push(`Menor ${numeroMenor}: el tipo de documento no es válido.`);
-    }
-
-    if (!documentoNumero) {
+    } else {
       errores.push(
-        `Menor ${numeroMenor}: el número de documento es obligatorio.`
-      );
-    }
-
-    if (documentoTipo === "RUT" && !validarRutChileno(documentoNumero)) {
-      errores.push(`Menor ${numeroMenor}: el RUT ingresado no es válido.`);
-    }
-
-    if (
-      documentoTipo !== "RUT" &&
-      documentoNumero &&
-      !/^[A-Za-z0-9-]{5,20}$/.test(documentoNumero)
-    ) {
-      errores.push(
-        `Menor ${numeroMenor}: el documento debe tener entre 5 y 20 caracteres.`
+        ...validarDocumentoIdentidad(
+          documentoTipo,
+          documentoNumero,
+          `Menor ${numeroMenor}: el documento`
+        )
       );
     }
 
     if (!nacionalidad || nacionalidad.length < 3) {
       errores.push(`Menor ${numeroMenor}: la nacionalidad es obligatoria.`);
+    } else if (!soloLetras(nacionalidad)) {
+      errores.push(`Menor ${numeroMenor}: la nacionalidad solo puede contener letras.`);
     }
 
     if (!validarFechaNoFutura(menor.fecha_nacimiento)) {
-      errores.push(
-        `Menor ${numeroMenor}: la fecha de nacimiento no puede ser futura.`
-      );
+      errores.push(`Menor ${numeroMenor}: la fecha de nacimiento es obligatoria y no puede ser futura.`);
+    } else {
+      const edad = calcularEdad(menor.fecha_nacimiento);
+      if (edad === null || edad >= 18) {
+        errores.push(`Menor ${numeroMenor}: debe tener menos de 18 años.`);
+      }
     }
 
     if (!parentesco || parentesco.length < 2) {
-      errores.push(
-        `Menor ${numeroMenor}: el parentesco o relación es obligatorio.`
-      );
+      errores.push(`Menor ${numeroMenor}: el parentesco o relación es obligatorio.`);
+    }
+
+    if (!limpiarTexto(menor.autorizacion_viaje)) {
+      errores.push(`Menor ${numeroMenor}: debes indicar la autorización o documento de viaje.`);
     }
 
     if (observaciones.length > 300) {
-      errores.push(
-        `Menor ${numeroMenor}: las observaciones no pueden superar los 300 caracteres.`
-      );
+      errores.push(`Menor ${numeroMenor}: las observaciones no pueden superar los 300 caracteres.`);
     }
   });
 
@@ -250,9 +326,7 @@ const validarDocumentos = (documentos = []) => {
   }
 
   if (documentos.length > MAX_DOCUMENTOS_TRAMITE) {
-    errores.push(
-      `Solo se permite adjuntar un máximo de ${MAX_DOCUMENTOS_TRAMITE} documentos por trámite.`
-    );
+    errores.push(`Solo se permite adjuntar un máximo de ${MAX_DOCUMENTOS_TRAMITE} documentos por trámite.`);
   }
 
   documentos.forEach((documento, index) => {
@@ -266,39 +340,27 @@ const validarDocumentos = (documentos = []) => {
     const observaciones = limpiarTexto(documento.observaciones);
 
     if (!tipoDocumento || tipoDocumento.length < 3) {
-      errores.push(
-        `Documento ${numeroDocumento}: debes indicar el tipo de documento.`
-      );
+      errores.push(`Documento ${numeroDocumento}: debes indicar el tipo de documento.`);
     }
 
     if (!nombreArchivo) {
-      errores.push(
-        `Documento ${numeroDocumento}: el nombre del archivo es obligatorio.`
-      );
+      errores.push(`Documento ${numeroDocumento}: el nombre del archivo es obligatorio.`);
     }
 
     if (!MIME_TYPES_PERMITIDOS.includes(mimeType)) {
-      errores.push(
-        `Documento ${numeroDocumento}: solo se permiten archivos PDF, JPG, JPEG o PNG.`
-      );
+      errores.push(`Documento ${numeroDocumento}: solo se permiten archivos PDF, JPG, JPEG o PNG.`);
     }
 
     if (!Number.isFinite(tamano) || tamano <= 0) {
-      errores.push(
-        `Documento ${numeroDocumento}: el tamaño del archivo no es válido.`
-      );
+      errores.push(`Documento ${numeroDocumento}: el tamaño del archivo no es válido.`);
     }
 
     if (tamano > MAX_TAMANO_DOCUMENTO) {
-      errores.push(
-        `Documento ${numeroDocumento}: el archivo no puede superar los 2 MB.`
-      );
+      errores.push(`Documento ${numeroDocumento}: el archivo no puede superar los 2 MB.`);
     }
 
     if (!contenidoBase64) {
-      errores.push(
-        `Documento ${numeroDocumento}: el contenido del archivo es obligatorio.`
-      );
+      errores.push(`Documento ${numeroDocumento}: el contenido del archivo es obligatorio.`);
     }
 
     if (
@@ -306,15 +368,11 @@ const validarDocumentos = (documentos = []) => {
       !contenidoBase64.startsWith("data:") &&
       !/^[A-Za-z0-9+/=\n\r]+$/.test(contenidoBase64)
     ) {
-      errores.push(
-        `Documento ${numeroDocumento}: el archivo no tiene un formato válido.`
-      );
+      errores.push(`Documento ${numeroDocumento}: el archivo no tiene un formato válido.`);
     }
 
     if (observaciones.length > 300) {
-      errores.push(
-        `Documento ${numeroDocumento}: las observaciones no pueden superar los 300 caracteres.`
-      );
+      errores.push(`Documento ${numeroDocumento}: las observaciones no pueden superar los 300 caracteres.`);
     }
   });
 
@@ -357,38 +415,52 @@ const validarDatosTramite = ({
   const documentoTipo = limpiarTexto(persona.documento_tipo);
   const documentoNumero = limpiarTexto(persona.documento_numero);
   const nacionalidad = limpiarTexto(persona.nacionalidad);
+  const telefono = limpiarTexto(persona.telefono);
   const email = limpiarTexto(persona.email);
 
   if (nombre.length < 2) errores.push("El nombre debe tener al menos 2 caracteres.");
+  else if (!soloLetras(nombre)) errores.push("El nombre solo puede contener letras.");
+
   if (apellido.length < 2) errores.push("El apellido debe tener al menos 2 caracteres.");
-  if (!soloLetras(nombre)) errores.push("El nombre solo puede contener letras.");
-  if (!soloLetras(apellido)) errores.push("El apellido solo puede contener letras.");
+  else if (!soloLetras(apellido)) errores.push("El apellido solo puede contener letras.");
 
   if (!["RUT", "Pasaporte", "DNI"].includes(documentoTipo)) {
     errores.push("El tipo de documento no es válido.");
-  }
-
-  if (!documentoNumero) {
-    errores.push("El número de documento es obligatorio.");
-  }
-
-  if (documentoTipo === "RUT" && !validarRutChileno(documentoNumero)) {
-    errores.push("El RUT ingresado no es válido.");
-  }
-
-  if (
-    documentoTipo !== "RUT" &&
-    !/^[A-Za-z0-9-]{5,20}$/.test(documentoNumero)
-  ) {
-    errores.push("El documento debe tener entre 5 y 20 caracteres.");
+  } else {
+    errores.push(
+      ...validarDocumentoIdentidad(
+        documentoTipo,
+        documentoNumero,
+        "El documento de la persona"
+      )
+    );
   }
 
   if (!nacionalidad || nacionalidad.length < 3) {
     errores.push("La nacionalidad es obligatoria.");
+  } else if (!soloLetras(nacionalidad)) {
+    errores.push("La nacionalidad solo puede contener letras.");
   }
 
-  if (email && !validarEmail(email)) {
+  if (!telefono) {
+    errores.push("El teléfono es obligatorio.");
+  } else if (!validarTelefono(telefono)) {
+    errores.push("El teléfono no tiene un formato válido.");
+  }
+
+  if (!email) {
+    errores.push("El email es obligatorio.");
+  } else if (!validarEmail(email)) {
     errores.push("El email no tiene un formato válido.");
+  }
+
+  if (!validarFechaNoFutura(persona.fecha_nacimiento)) {
+    errores.push("La fecha de nacimiento es obligatoria y no puede ser futura.");
+  } else {
+    const edad = calcularEdad(persona.fecha_nacimiento);
+    if (edad !== null && edad > 120) {
+      errores.push("La fecha de nacimiento no puede superar los 120 años.");
+    }
   }
 
   const patente = normalizarPatente(vehiculo.patente);
