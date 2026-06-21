@@ -111,6 +111,8 @@ const crearFormularioInicial = () => ({
     email: "",
   },
   vehiculo: {
+    rol_viajero: "CHOFER",
+    observacion_pasajero: "",
     tipo: "Particular",
     patente: "",
     pais_origen: "",
@@ -279,6 +281,28 @@ function RegistroPaso({ publico = false }) {
     }));
 
     quitarError(campo);
+  };
+
+  const cambiarRolVehiculo = (valor) => {
+    setForm((prev) => ({
+      ...prev,
+      vehiculo: {
+        ...prev.vehiculo,
+        rol_viajero: valor,
+      },
+    }));
+
+    setCamposFaltantes((prev) => {
+      const nuevosErrores = { ...prev };
+
+      Object.keys(nuevosErrores).forEach((ruta) => {
+        if (ruta.startsWith("vehiculo.")) {
+          delete nuevosErrores[ruta];
+        }
+      });
+
+      return nuevosErrores;
+    });
   };
 
   const cambiarMotivoViaje = (valor) => {
@@ -718,6 +742,10 @@ function RegistroPaso({ publico = false }) {
     const telefono = form.persona.telefono.trim();
     const email = form.persona.email.trim();
 
+    const rolViajero = form.vehiculo.rol_viajero || "CHOFER";
+    const esChofer = rolViajero === "CHOFER";
+    const observacionPasajero = (form.vehiculo.observacion_pasajero || "").trim();
+
     const patente = form.vehiculo.patente.trim();
     const paisOrigen = form.vehiculo.pais_origen.trim();
     const marca = form.vehiculo.marca.trim();
@@ -784,51 +812,59 @@ function RegistroPaso({ publico = false }) {
       errores["persona.email"] = "Ingresa un correo electrónico válido.";
     }
 
-    if (!patente) {
-      errores["vehiculo.patente"] = "La patente es obligatoria.";
-    } else if (!/^[A-Z0-9-]{4,10}$/.test(patente.toUpperCase())) {
-      errores["vehiculo.patente"] = "La patente debe tener entre 4 y 10 caracteres, solo letras y números.";
+    if (!rolViajero) {
+      errores["vehiculo.rol_viajero"] = "Debes indicar si viajas como chofer o pasajero.";
     }
 
-    if (!paisOrigen) {
-      errores["vehiculo.pais_origen"] = "El país de origen es obligatorio.";
-    } else if (paisOrigen.length < 3) {
-      errores["vehiculo.pais_origen"] = "El país de origen debe tener al menos 3 caracteres.";
-    } else if (!soloLetras(paisOrigen)) {
-      errores["vehiculo.pais_origen"] = "El país de origen solo debe contener letras.";
-    }
-
-    if (!marca) {
-      errores["vehiculo.marca"] = "La marca es obligatoria.";
-    } else if (marca.length < 2) {
-      errores["vehiculo.marca"] = "La marca debe tener al menos 2 caracteres.";
-    }
-
-    if (!modelo) {
-      errores["vehiculo.modelo"] = "El modelo es obligatorio.";
-    }
-
-    if (anio) {
-      const anioNumero = Number(anio);
-      const anioActual = new Date().getFullYear();
-
-      if (!Number.isInteger(anioNumero)) {
-        errores["vehiculo.anio"] = "El año debe ser un número válido.";
-      } else if (anioNumero < 1950 || anioNumero > anioActual + 1) {
-        errores["vehiculo.anio"] = `El año debe estar entre 1950 y ${anioActual + 1}.`;
+    if (esChofer) {
+      if (!patente) {
+        errores["vehiculo.patente"] = "La patente es obligatoria.";
+      } else if (!/^[A-Z0-9-]{4,10}$/.test(patente.toUpperCase())) {
+        errores["vehiculo.patente"] = "La patente debe tener entre 4 y 10 caracteres, solo letras y números.";
       }
-    }
 
-    if (color && !soloLetras(color)) {
-      errores["vehiculo.color"] = "El color solo debe contener letras.";
-    }
+      if (!paisOrigen) {
+        errores["vehiculo.pais_origen"] = "El país de origen es obligatorio.";
+      } else if (paisOrigen.length < 3) {
+        errores["vehiculo.pais_origen"] = "El país de origen debe tener al menos 3 caracteres.";
+      } else if (!soloLetras(paisOrigen)) {
+        errores["vehiculo.pais_origen"] = "El país de origen solo debe contener letras.";
+      }
 
-    if (chasis && chasis.length < 5) {
-      errores["vehiculo.chasis"] = "El número de chasis debe tener al menos 5 caracteres.";
-    }
+      if (!marca) {
+        errores["vehiculo.marca"] = "La marca es obligatoria.";
+      } else if (marca.length < 2) {
+        errores["vehiculo.marca"] = "La marca debe tener al menos 2 caracteres.";
+      }
 
-    if (motor && motor.length < 3) {
-      errores["vehiculo.motor"] = "El número de motor debe tener al menos 3 caracteres.";
+      if (!modelo) {
+        errores["vehiculo.modelo"] = "El modelo es obligatorio.";
+      }
+
+      if (anio) {
+        const anioNumero = Number(anio);
+        const anioActual = new Date().getFullYear();
+
+        if (!Number.isInteger(anioNumero)) {
+          errores["vehiculo.anio"] = "El año debe ser un número válido.";
+        } else if (anioNumero < 1950 || anioNumero > anioActual + 1) {
+          errores["vehiculo.anio"] = `El año debe estar entre 1950 y ${anioActual + 1}.`;
+        }
+      }
+
+      if (color && !soloLetras(color)) {
+        errores["vehiculo.color"] = "El color solo debe contener letras.";
+      }
+
+      if (chasis && chasis.length < 5) {
+        errores["vehiculo.chasis"] = "El número de chasis debe tener al menos 5 caracteres.";
+      }
+
+      if (motor && motor.length < 3) {
+        errores["vehiculo.motor"] = "El número de motor debe tener al menos 3 caracteres.";
+      }
+    } else if (observacionPasajero.length > 300) {
+      errores["vehiculo.observacion_pasajero"] = "La observación de pasajero no puede superar los 300 caracteres.";
     }
 
     (form.menores || []).forEach((menor, index) => {
@@ -930,6 +966,45 @@ function RegistroPaso({ publico = false }) {
     }
 
     return true;
+  };
+
+  const prepararVehiculoParaEnvio = () => {
+    const rolViajero = form.vehiculo.rol_viajero || "CHOFER";
+
+    if (rolViajero === "PASAJERO") {
+      return {
+        rol_viajero: "PASAJERO",
+        condicion_viajero: "Acompañante / Pasajero",
+        tipo: "Pasajero",
+        patente: "",
+        pais_origen: "",
+        marca: "",
+        modelo: "",
+        anio: "",
+        color: "",
+        chasis: "",
+        motor: "",
+        observacion_pasajero:
+          form.vehiculo.observacion_pasajero.trim() ||
+          "La persona indicó que viaja como acompañante o pasajero.",
+      };
+    }
+
+    return {
+      ...form.vehiculo,
+      rol_viajero: "CHOFER",
+      condicion_viajero: "Chofer / Conductor",
+      observacion_pasajero: "",
+      tipo: form.vehiculo.tipo,
+      patente: form.vehiculo.patente.trim().toUpperCase(),
+      pais_origen: form.vehiculo.pais_origen.trim(),
+      marca: form.vehiculo.marca.trim(),
+      modelo: form.vehiculo.modelo.trim(),
+      anio: form.vehiculo.anio.toString().trim(),
+      color: form.vehiculo.color.trim(),
+      chasis: form.vehiculo.chasis.trim(),
+      motor: form.vehiculo.motor.trim(),
+    };
   };
 
   const prepararPersonaParaEnvio = () => {
@@ -1058,6 +1133,7 @@ function RegistroPaso({ publico = false }) {
       const response = await api.post("/tramites", {
         ...form,
         persona: prepararPersonaParaEnvio(),
+        vehiculo: prepararVehiculoParaEnvio(),
         frontera: "Complejo Los Libertadores",
         motivo_viaje:
           form.motivo_viaje === "Otro"
@@ -1554,112 +1630,179 @@ function RegistroPaso({ publico = false }) {
         id="vehiculo"
         className="vehicle-form-section"
         titulo="Datos del vehículo"
+        descripcion="Indica si eres chofer o pasajero para mostrar solo los datos necesarios."
         icono={<ClipboardList size={22} />}
         abierto={seccionesAbiertas.vehiculo}
         onToggle={toggleSeccion}
       >
-        <div className="form-grid">
-          <label>
-            <EtiquetaCampo requerido>Tipo de vehículo</EtiquetaCampo>
-            <select value={form.vehiculo.tipo} onChange={(e) => cambiar("vehiculo", "tipo", e.target.value)}>
-              <option value="Particular">Particular</option>
-              <option value="Carga">Carga</option>
-              <option value="Bus">Bus</option>
-              <option value="Moto">Moto</option>
+        <div className="vehicle-role-box">
+          <label className="vehicle-role-field">
+            <EtiquetaCampo requerido>Rol en el vehículo</EtiquetaCampo>
+            <select
+              className={marcarCampo("vehiculo.rol_viajero")}
+              value={form.vehiculo.rol_viajero}
+              onChange={(e) => cambiarRolVehiculo(e.target.value)}
+            >
+              <option value="CHOFER">Chofer / Conductor</option>
+              <option value="PASAJERO">Acompañante / Pasajero</option>
             </select>
+            {mostrarError("vehiculo.rol_viajero")}
           </label>
 
-          <label>
-            <EtiquetaCampo requerido>Patente</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.patente")}
-              value={form.vehiculo.patente}
-              onChange={(e) => cambiar("vehiculo", "patente", e.target.value.toUpperCase())}
-              placeholder="Ej: AB1234"
-            />
-            {mostrarError("vehiculo.patente")}
-          </label>
-
-          <label>
-            <EtiquetaCampo requerido>País de origen</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.pais_origen")}
-              value={form.vehiculo.pais_origen}
-              onChange={(e) => cambiar("vehiculo", "pais_origen", limpiarTextoSoloLetras(e.target.value))}
-              placeholder="Ej: Chile"
-            />
-            {mostrarError("vehiculo.pais_origen")}
-          </label>
-
-          <label>
-            <EtiquetaCampo requerido>Marca</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.marca")}
-              value={form.vehiculo.marca}
-              onChange={(e) => cambiar("vehiculo", "marca", e.target.value)}
-              placeholder="Ej: Toyota"
-            />
-            {mostrarError("vehiculo.marca")}
-          </label>
-
-          <label>
-            <EtiquetaCampo requerido>Modelo</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.modelo")}
-              value={form.vehiculo.modelo}
-              onChange={(e) => cambiar("vehiculo", "modelo", e.target.value)}
-              placeholder="Ej: Yaris"
-            />
-            {mostrarError("vehiculo.modelo")}
-          </label>
-
-          <label>
-            <EtiquetaCampo>Año</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.anio")}
-              type="number"
-              min="1950"
-              max="2030"
-              value={form.vehiculo.anio}
-              onChange={(e) => cambiar("vehiculo", "anio", e.target.value)}
-              placeholder="Opcional"
-            />
-            {mostrarError("vehiculo.anio")}
-          </label>
-
-          <label>
-            <EtiquetaCampo>Color</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.color")}
-              value={form.vehiculo.color}
-              onChange={(e) => cambiar("vehiculo", "color", limpiarTextoSoloLetras(e.target.value))}
-              placeholder="Opcional"
-            />
-            {mostrarError("vehiculo.color")}
-          </label>
-
-          <label>
-            <EtiquetaCampo>Número de chasis</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.chasis")}
-              value={form.vehiculo.chasis}
-              onChange={(e) => cambiar("vehiculo", "chasis", e.target.value)}
-              placeholder="Opcional"
-            />
-            {mostrarError("vehiculo.chasis")}
-          </label>
-
-          <label>
-            <EtiquetaCampo>Número de motor</EtiquetaCampo>
-            <input
-              className={marcarCampo("vehiculo.motor")}
-              value={form.vehiculo.motor}
-              onChange={(e) => cambiar("vehiculo", "motor", e.target.value)}
-              placeholder="Opcional"
-            />
-            {mostrarError("vehiculo.motor")}
-          </label>
+          <div className="vehicle-role-help">
+            {form.vehiculo.rol_viajero === "CHOFER" ? (
+              <p>
+                Como chofer debes registrar los datos principales del vehículo que cruzará la frontera.
+              </p>
+            ) : (
+              <p>
+                Como acompañante o pasajero no necesitas completar todos los datos del vehículo.
+                El trámite quedará registrado indicando tu condición de viaje.
+              </p>
+            )}
+          </div>
         </div>
+
+        {form.vehiculo.rol_viajero === "CHOFER" ? (
+          <div className="form-grid">
+            <label>
+              <EtiquetaCampo requerido>Tipo de vehículo</EtiquetaCampo>
+              <select value={form.vehiculo.tipo} onChange={(e) => cambiar("vehiculo", "tipo", e.target.value)}>
+                <option value="Particular">Particular</option>
+                <option value="Carga">Carga</option>
+                <option value="Bus">Bus</option>
+                <option value="Moto">Moto</option>
+              </select>
+            </label>
+
+            <label>
+              <EtiquetaCampo requerido>Patente</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.patente")}
+                value={form.vehiculo.patente}
+                onChange={(e) => cambiar("vehiculo", "patente", e.target.value.toUpperCase())}
+                placeholder="Ej: AB1234"
+              />
+              {mostrarError("vehiculo.patente")}
+            </label>
+
+            <label>
+              <EtiquetaCampo requerido>País de origen</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.pais_origen")}
+                value={form.vehiculo.pais_origen}
+                onChange={(e) => cambiar("vehiculo", "pais_origen", limpiarTextoSoloLetras(e.target.value))}
+                placeholder="Ej: Chile"
+              />
+              {mostrarError("vehiculo.pais_origen")}
+            </label>
+
+            <label>
+              <EtiquetaCampo requerido>Marca</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.marca")}
+                value={form.vehiculo.marca}
+                onChange={(e) => cambiar("vehiculo", "marca", e.target.value)}
+                placeholder="Ej: Toyota"
+              />
+              {mostrarError("vehiculo.marca")}
+            </label>
+
+            <label>
+              <EtiquetaCampo requerido>Modelo</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.modelo")}
+                value={form.vehiculo.modelo}
+                onChange={(e) => cambiar("vehiculo", "modelo", e.target.value)}
+                placeholder="Ej: Yaris"
+              />
+              {mostrarError("vehiculo.modelo")}
+            </label>
+
+            <label>
+              <EtiquetaCampo>Año</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.anio")}
+                type="number"
+                min="1950"
+                max="2030"
+                value={form.vehiculo.anio}
+                onChange={(e) => cambiar("vehiculo", "anio", e.target.value)}
+                placeholder="Opcional"
+              />
+              {mostrarError("vehiculo.anio")}
+            </label>
+
+            <label>
+              <EtiquetaCampo>Color</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.color")}
+                value={form.vehiculo.color}
+                onChange={(e) => cambiar("vehiculo", "color", limpiarTextoSoloLetras(e.target.value))}
+                placeholder="Opcional"
+              />
+              {mostrarError("vehiculo.color")}
+            </label>
+
+            <label>
+              <EtiquetaCampo>Número de chasis</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.chasis")}
+                value={form.vehiculo.chasis}
+                onChange={(e) => cambiar("vehiculo", "chasis", e.target.value)}
+                placeholder="Opcional"
+              />
+              {mostrarError("vehiculo.chasis")}
+            </label>
+
+            <label>
+              <EtiquetaCampo>Número de motor</EtiquetaCampo>
+              <input
+                className={marcarCampo("vehiculo.motor")}
+                value={form.vehiculo.motor}
+                onChange={(e) => cambiar("vehiculo", "motor", e.target.value)}
+                placeholder="Opcional"
+              />
+              {mostrarError("vehiculo.motor")}
+            </label>
+          </div>
+        ) : (
+          <div className="passenger-vehicle-box">
+            <div className="passenger-vehicle-notice">
+              <Users size={22} />
+              <div>
+                <strong>Viajas como acompañante o pasajero</strong>
+                <p>
+                  En este caso el sistema no solicitará los datos completos del vehículo.
+                  Esta información quedará visible para revisión de Aduanas.
+                </p>
+              </div>
+            </div>
+
+            <div className="form-grid">
+              <label>
+                <EtiquetaCampo requerido>Condición de viaje</EtiquetaCampo>
+                <input
+                  value="Acompañante / Pasajero"
+                  readOnly
+                  className="readonly-input"
+                />
+              </label>
+
+              <label className="full-width-label">
+                <EtiquetaCampo>Observación del viaje</EtiquetaCampo>
+                <textarea
+                  className={marcarCampo("vehiculo.observacion_pasajero")}
+                  value={form.vehiculo.observacion_pasajero}
+                  onChange={(e) => cambiar("vehiculo", "observacion_pasajero", e.target.value)}
+                  placeholder="Opcional. Ej: viajo como acompañante en vehículo familiar."
+                  maxLength={300}
+                />
+                {mostrarError("vehiculo.observacion_pasajero")}
+              </label>
+            </div>
+          </div>
+        )}
       </SeccionDesplegable>
 
       <SeccionDesplegable

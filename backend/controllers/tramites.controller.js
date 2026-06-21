@@ -186,6 +186,45 @@ const normalizarPatente = (patente = "") => {
     .replace(/-/g, "");
 };
 
+const ROLES_VEHICULO = ["CHOFER", "PASAJERO"];
+
+const normalizarRolVehiculo = (rol = "CHOFER") => {
+  const rolNormalizado = limpiarTexto(rol).toUpperCase();
+  return ROLES_VEHICULO.includes(rolNormalizado) ? rolNormalizado : "CHOFER";
+};
+
+const esPasajeroVehiculo = (vehiculo = {}) => {
+  return normalizarRolVehiculo(vehiculo?.rol_viajero) === "PASAJERO";
+};
+
+const generarPatentePasajero = (documentoNumero = "") => {
+  const base = limpiarTexto(documentoNumero)
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase();
+  const marcaTiempo = Date.now().toString(36).toUpperCase();
+  const sufijo = `${base.slice(-3)}${marcaTiempo}`.slice(-7).padStart(7, "0");
+
+  return `PAS${sufijo}`.slice(0, 10);
+};
+
+const asegurarColumnasRolVehiculo = async () => {
+  const columnas = [
+    "ALTER TABLE vehiculos ADD COLUMN rol_viajero TEXT DEFAULT 'CHOFER'",
+    "ALTER TABLE vehiculos ADD COLUMN condicion_viajero TEXT DEFAULT 'Chofer / Conductor'",
+    "ALTER TABLE vehiculos ADD COLUMN observacion_pasajero TEXT DEFAULT ''"
+  ];
+
+  for (const sql of columnas) {
+    try {
+      await runQuery(sql);
+    } catch (error) {
+      if (!String(error.message || "").includes("duplicate column name")) {
+        throw error;
+      }
+    }
+  }
+};
+
 const validarFechaNoFutura = (fechaTexto = "") => {
   if (!fechaTexto) return false;
 
@@ -463,39 +502,52 @@ const validarDatosTramite = ({
     }
   }
 
-  const patente = normalizarPatente(vehiculo.patente);
-  const paisOrigen = limpiarTexto(vehiculo.pais_origen);
-  const marca = limpiarTexto(vehiculo.marca);
-  const modelo = limpiarTexto(vehiculo.modelo);
-  const color = limpiarTexto(vehiculo.color);
+  const rolViajero = normalizarRolVehiculo(vehiculo.rol_viajero);
+  const observacionPasajero = limpiarTexto(vehiculo.observacion_pasajero);
 
-  if (!patente || !/^[A-Z0-9]{4,10}$/.test(patente)) {
-    errores.push("La patente debe tener entre 4 y 10 caracteres alfanuméricos.");
+  if (!ROLES_VEHICULO.includes(rolViajero)) {
+    errores.push("Debes indicar si viajas como chofer o pasajero.");
   }
 
-  if (!paisOrigen || paisOrigen.length < 3) {
-    errores.push("El país de origen es obligatorio.");
-  }
+  if (rolViajero === "CHOFER") {
+    const patente = normalizarPatente(vehiculo.patente);
+    const paisOrigen = limpiarTexto(vehiculo.pais_origen);
+    const marca = limpiarTexto(vehiculo.marca);
+    const modelo = limpiarTexto(vehiculo.modelo);
+    const color = limpiarTexto(vehiculo.color);
 
-  if (!marca || marca.length < 2) {
-    errores.push("La marca del vehículo es obligatoria.");
-  }
-
-  if (!modelo || modelo.length < 1) {
-    errores.push("El modelo del vehículo es obligatorio.");
-  }
-
-  if (vehiculo.anio) {
-    const anio = Number(vehiculo.anio);
-    const anioActual = new Date().getFullYear();
-
-    if (!Number.isInteger(anio) || anio < 1950 || anio > anioActual + 1) {
-      errores.push("El año del vehículo no es válido.");
+    if (!patente || !/^[A-Z0-9]{4,10}$/.test(patente)) {
+      errores.push("La patente debe tener entre 4 y 10 caracteres alfanuméricos.");
     }
-  }
 
-  if (color && !soloLetras(color)) {
-    errores.push("El color solo puede contener letras.");
+    if (!paisOrigen || paisOrigen.length < 3) {
+      errores.push("El país de origen es obligatorio.");
+    } else if (!soloLetras(paisOrigen)) {
+      errores.push("El país de origen solo puede contener letras.");
+    }
+
+    if (!marca || marca.length < 2) {
+      errores.push("La marca del vehículo es obligatoria.");
+    }
+
+    if (!modelo || modelo.length < 1) {
+      errores.push("El modelo del vehículo es obligatorio.");
+    }
+
+    if (vehiculo.anio) {
+      const anio = Number(vehiculo.anio);
+      const anioActual = new Date().getFullYear();
+
+      if (!Number.isInteger(anio) || anio < 1950 || anio > anioActual + 1) {
+        errores.push("El año del vehículo no es válido.");
+      }
+    }
+
+    if (color && !soloLetras(color)) {
+      errores.push("El color solo puede contener letras.");
+    }
+  } else if (observacionPasajero.length > 300) {
+    errores.push("La observación del pasajero no puede superar los 300 caracteres.");
   }
 
   if (declaracion?.observaciones && declaracion.observaciones.length > 300) {
@@ -569,6 +621,15 @@ const crearTramite = async (req, res) => {
     });
   }
 
+  try {
+    await asegurarColumnasRolVehiculo();
+  } catch (error) {
+    console.error("Error preparando columnas de rol vehicular:", error.message);
+    return res.status(500).json({
+      mensaje: "Error al preparar datos del vehículo",
+    });
+  }
+
   const usuarioId = req.usuario?.id || null;
 
   const personaNormalizada = {
@@ -586,18 +647,41 @@ const crearTramite = async (req, res) => {
     email: limpiarTexto(persona.email),
   };
 
-  const vehiculoNormalizado = {
-    ...vehiculo,
-    tipo: limpiarTexto(vehiculo.tipo),
-    patente: normalizarPatente(vehiculo.patente),
-    pais_origen: limpiarTexto(vehiculo.pais_origen),
-    marca: limpiarTexto(vehiculo.marca),
-    modelo: limpiarTexto(vehiculo.modelo),
-    anio: vehiculo.anio ? Number(vehiculo.anio) : "",
-    color: limpiarTexto(vehiculo.color),
-    chasis: limpiarTexto(vehiculo.chasis),
-    motor: limpiarTexto(vehiculo.motor),
-  };
+  const rolViajero = normalizarRolVehiculo(vehiculo.rol_viajero);
+  const viajeroEsPasajero = rolViajero === "PASAJERO";
+
+  const vehiculoNormalizado = viajeroEsPasajero
+    ? {
+        rol_viajero: "PASAJERO",
+        condicion_viajero: "Acompañante / Pasajero",
+        tipo: "Pasajero",
+        patente: generarPatentePasajero(personaNormalizada.documento_numero),
+        pais_origen: "No aplica",
+        marca: "No aplica",
+        modelo: "No aplica",
+        anio: "",
+        color: "",
+        chasis: "",
+        motor: "",
+        observacion_pasajero:
+          limpiarTexto(vehiculo.observacion_pasajero) ||
+          "La persona indicó que viaja como acompañante o pasajero.",
+      }
+    : {
+        ...vehiculo,
+        rol_viajero: "CHOFER",
+        condicion_viajero: "Chofer / Conductor",
+        tipo: limpiarTexto(vehiculo.tipo),
+        patente: normalizarPatente(vehiculo.patente),
+        pais_origen: limpiarTexto(vehiculo.pais_origen),
+        marca: limpiarTexto(vehiculo.marca),
+        modelo: limpiarTexto(vehiculo.modelo),
+        anio: vehiculo.anio ? Number(vehiculo.anio) : "",
+        color: limpiarTexto(vehiculo.color),
+        chasis: limpiarTexto(vehiculo.chasis),
+        motor: limpiarTexto(vehiculo.motor),
+        observacion_pasajero: "",
+      };
 
   const declaracionNormalizada = {
     transporta_alimentos: declaracion?.transporta_alimentos ? 1 : 0,
@@ -611,7 +695,9 @@ const crearTramite = async (req, res) => {
   const documentosNormalizados = normalizarDocumentos(documentos);
 
   const personaPrueba = buscarPersonaPrueba(personaNormalizada.documento_numero);
-  const vehiculoPrueba = buscarVehiculoPrueba(vehiculoNormalizado.patente);
+  const vehiculoPrueba = viajeroEsPasajero
+    ? null
+    : buscarVehiculoPrueba(vehiculoNormalizado.patente);
 
   const personaValidada = {
     ...personaNormalizada,
@@ -706,9 +792,12 @@ const crearTramite = async (req, res) => {
         chasis,
         motor,
         antecedente_vehiculo,
-        detalle_antecedente
+        detalle_antecedente,
+        rol_viajero,
+        condicion_viajero,
+        observacion_pasajero
        )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         usuarioId,
         vehiculoValidado.tipo,
@@ -722,6 +811,9 @@ const crearTramite = async (req, res) => {
         vehiculoValidado.motor || "",
         vehiculoValidado.antecedente_vehiculo ? 1 : 0,
         vehiculoValidado.detalle_antecedente || "",
+        vehiculoValidado.rol_viajero,
+        vehiculoValidado.condicion_viajero,
+        vehiculoValidado.observacion_pasajero || "",
       ]
     );
 
@@ -736,7 +828,10 @@ const crearTramite = async (req, res) => {
         chasis = ?,
         motor = ?,
         antecedente_vehiculo = ?,
-        detalle_antecedente = ?
+        detalle_antecedente = ?,
+        rol_viajero = ?,
+        condicion_viajero = ?,
+        observacion_pasajero = ?
        WHERE patente = ?`,
       [
         vehiculoValidado.tipo,
@@ -749,6 +844,9 @@ const crearTramite = async (req, res) => {
         vehiculoValidado.motor || "",
         vehiculoValidado.antecedente_vehiculo ? 1 : 0,
         vehiculoValidado.detalle_antecedente || "",
+        vehiculoValidado.rol_viajero,
+        vehiculoValidado.condicion_viajero,
+        vehiculoValidado.observacion_pasajero || "",
         vehiculoValidado.patente,
       ]
     );
@@ -962,6 +1060,9 @@ const listarTramites = async (req, res) => {
       v.tipo AS vehiculo_tipo,
       v.marca,
       v.modelo,
+      COALESCE(v.rol_viajero, 'CHOFER') AS rol_viajero,
+      COALESCE(v.condicion_viajero, 'Chofer / Conductor') AS condicion_viajero,
+      COALESCE(v.observacion_pasajero, '') AS observacion_pasajero,
       v.antecedente_vehiculo,
       d.transporta_alimentos,
       d.transporta_vegetales,
@@ -988,6 +1089,7 @@ const listarTramites = async (req, res) => {
   `;
 
   try {
+    await asegurarColumnasRolVehiculo();
     const rows = await allQuery(sql, params);
     return res.json(rows);
   } catch (error) {
@@ -1134,6 +1236,9 @@ const obtenerDetalleTramite = async (req, res) => {
       v.color,
       v.chasis,
       v.motor,
+      COALESCE(v.rol_viajero, 'CHOFER') AS rol_viajero,
+      COALESCE(v.condicion_viajero, 'Chofer / Conductor') AS condicion_viajero,
+      COALESCE(v.observacion_pasajero, '') AS observacion_pasajero,
       v.antecedente_vehiculo,
       v.detalle_antecedente AS vehiculo_detalle_antecedente,
 
@@ -1151,6 +1256,7 @@ const obtenerDetalleTramite = async (req, res) => {
   `;
 
   try {
+    await asegurarColumnasRolVehiculo();
     const tramite = await getQuery(sql, [id]);
 
     if (!tramite) {
@@ -1233,7 +1339,10 @@ const obtenerTramitePorCodigo = async (req, res) => {
       p.documento_numero,
       v.patente,
       v.marca,
-      v.modelo
+      v.modelo,
+      COALESCE(v.rol_viajero, 'CHOFER') AS rol_viajero,
+      COALESCE(v.condicion_viajero, 'Chofer / Conductor') AS condicion_viajero,
+      COALESCE(v.observacion_pasajero, '') AS observacion_pasajero
     FROM tramites t
     INNER JOIN personas p ON t.persona_id = p.id
     INNER JOIN vehiculos v ON t.vehiculo_id = v.id
@@ -1251,6 +1360,7 @@ const obtenerTramitePorCodigo = async (req, res) => {
   `;
 
   try {
+    await asegurarColumnasRolVehiculo();
     const tramite = await getQuery(sql, [codigoNormalizado]);
 
     if (!tramite) {
