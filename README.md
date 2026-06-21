@@ -1,38 +1,228 @@
-# Sistema Informático Integrado para Aduanas
+# Sistema Integrado de Gestión Aduanera
 
-Sistema web desarrollado en JavaScript para apoyar el registro y control de pasos fronterizos en el Complejo Los Libertadores. Permite registrar personas, vehículos, declaraciones juradas y trámites aduaneros, además de entregar herramientas de validación para funcionarios de Aduana.
+Proyecto web desarrollado como prototipo funcional para apoyar el registro y revisión de trámites de paso fronterizo en Aduanas Chile, enfocado en el Complejo Los Libertadores.
 
-El sistema cuenta con una interfaz responsive compatible con computadores, tablets y smartphones.
-
----
-
-## Enlaces del sistema desplegado
-
-### Frontend
-
-```txt
-https://sistema-aduanas-final.vercel.app/
-```
-
-### Backend
-
-```txt
-https://sistema-aduanas-backend.onrender.com
-```
-
-### API Backend
-
-```txt
-https://sistema-aduanas-backend.onrender.com/api
-```
-
-> Nota: Render en plan gratuito puede suspender el backend por inactividad. La primera carga puede tardar algunos segundos.
+El sistema permite que una persona registre su paso fronterizo de forma digital, ingresando datos personales, información del vehículo o condición de pasajero, menores acompañantes, documentos adjuntos y declaración jurada. Además, cuenta con un panel administrativo para que Aduanas pueda revisar, validar y consultar los trámites registrados.
 
 ---
 
-## Objetivo del sistema
+## Descripción del proyecto
 
-El objetivo principal es digitalizar y centralizar el registro de personas y vehículos que desean cruzar por Aduanas, permitiendo que el personal autorizado pueda revisar antecedentes, declaraciones, alertas y niveles de riesgo de manera más rápida y ordenada.
+El objetivo principal del sistema es digitalizar parte del proceso de registro fronterizo, permitiendo centralizar la información del viajero antes de cruzar la frontera.
+
+El proyecto cuenta con dos flujos principales:
+
+1. **Usuario público**
+
+   * Ingresa a la página principal.
+   * Accede al formulario de registro.
+   * Completa sus datos personales.
+   * Indica si viaja como chofer o pasajero.
+   * Registra menores acompañantes si corresponde.
+   * Adjunta documentos si es necesario.
+   * Completa la declaración jurada.
+   * Recibe un comprobante digital con código QR.
+
+2. **Administrador Aduana**
+
+   * Ingresa al login administrativo.
+   * Accede al dashboard.
+   * Revisa trámites registrados.
+   * Valida solicitudes.
+   * Consulta el detalle completo de cada trámite.
+   * Revisa menores, documentos adjuntos y declaración.
+   * Puede buscar trámites mediante código o QR.
+
+---
+
+## Funcionalidades principales
+
+### Página principal
+
+El sistema cuenta con una página inicial antes del registro, donde se muestran avisos, consejos e información útil para el viajero.
+
+Incluye:
+
+* Información del Complejo Los Libertadores.
+* Avisos antes de registrar el viaje.
+* Consejos sobre declaración de productos.
+* Información sobre menores acompañantes.
+* Información sobre documentos adjuntos.
+* Botón para iniciar registro público.
+* Botón para ingreso administrador.
+* Modo claro y modo oscuro.
+* Logo de Aduanas Chile.
+
+---
+
+### Registro público de paso fronterizo
+
+El formulario público permite registrar un trámite completo de paso fronterizo.
+
+Secciones del formulario:
+
+* Datos de la persona.
+* Menores acompañantes.
+* Datos del vehículo.
+* Documentos adjuntos.
+* Declaración y viaje.
+
+Cada sección funciona como menú desplegable para mejorar el orden visual del formulario.
+
+---
+
+### Datos de la persona
+
+Campos principales:
+
+* Nombre.
+* Apellido.
+* Tipo de documento.
+* Número de documento.
+* Nacionalidad.
+* Fecha de nacimiento.
+* Teléfono.
+* Email.
+
+El sistema valida documentos según el tipo seleccionado:
+
+* **RUT:** acepta entre 8 y 9 dígitos considerando dígito verificador, con formato automático.
+* **DNI:** acepta mínimo 7 y máximo 8 números, con puntos automáticos.
+* **Pasaporte:** acepta formato alfanumérico en mayúsculas, con largo similar a un pasaporte real.
+
+El teléfono y el email son obligatorios.
+
+---
+
+### Menores acompañantes
+
+El sistema permite agregar uno o más menores acompañantes al trámite.
+
+Cada menor registra:
+
+* Nombre.
+* Apellido.
+* Tipo de documento.
+* Número de documento.
+* Nacionalidad.
+* Fecha de nacimiento.
+* Parentesco o relación.
+* Autorización o documento de viaje.
+* Observaciones opcionales.
+
+El RUT del menor se comporta igual que el RUT de la persona principal, con formato automático y validación.
+
+---
+
+### Datos del vehículo
+
+La sección de vehículo permite seleccionar primero el rol del viajero:
+
+* Chofer / Conductor.
+* Acompañante / Pasajero.
+
+Si el usuario selecciona **Chofer / Conductor**, debe ingresar los datos principales del vehículo:
+
+* Tipo de vehículo.
+* Patente.
+* País de origen.
+* Marca.
+* Modelo.
+* Año.
+* Color.
+* Número de chasis.
+* Número de motor.
+
+Si el usuario selecciona **Acompañante / Pasajero**, el sistema no exige todos los datos del vehículo. En ese caso, se muestra un menú más simple indicando que la persona viaja como pasajero, junto con una observación opcional.
+
+---
+
+### Documentos adjuntos
+
+El sistema permite adjuntar documentos relacionados con el trámite.
+
+Tipos de documentos aceptados:
+
+* PDF.
+* JPG.
+* JPEG.
+* PNG.
+
+Restricciones:
+
+* Máximo 5 documentos por trámite.
+* Máximo 2 MB por archivo.
+
+Ejemplos de documentos:
+
+* Autorización notarial para menor.
+* Certificado de nacimiento.
+* Documento de identidad del menor.
+* Permiso de circulación.
+* Revisión técnica.
+* Seguro obligatorio.
+* Documento adicional.
+
+---
+
+### Declaración y viaje
+
+El usuario debe registrar información del viaje:
+
+* Motivo del viaje.
+* Destino.
+* Frontera.
+* Declaración de alimentos.
+* Declaración de vegetales.
+* Declaración de animales.
+* Declaración de dinero o valores.
+* Observaciones adicionales.
+
+La frontera queda definida como:
+
+```txt
+Complejo Los Libertadores
+```
+
+---
+
+### Comprobante digital
+
+Al finalizar el registro, el sistema genera un comprobante digital con:
+
+* Código del trámite.
+* Fecha de registro.
+* Estado inicial.
+* Cantidad de menores registrados.
+* Cantidad de documentos adjuntos.
+* Código QR.
+
+Acciones disponibles:
+
+* Copiar código.
+* Imprimir comprobante.
+* Descargar comprobante.
+* Volver al formulario.
+
+---
+
+### Panel administrador
+
+El administrador puede ingresar al sistema mediante login.
+
+Desde el panel puede:
+
+* Visualizar trámites registrados.
+* Consultar resumen general.
+* Revisar detalles de cada trámite.
+* Validar trámites.
+* Ver documentos adjuntos.
+* Revisar menores acompañantes.
+* Buscar trámites por código.
+* Escanear QR.
+* Gestionar usuarios.
+* Exportar información en CSV.
+* Consultar historial de acciones.
 
 ---
 
@@ -40,54 +230,135 @@ El objetivo principal es digitalizar y centralizar el registro de personas y veh
 
 ### Frontend
 
-* React
-* Vite
-* React Router DOM
-* Axios
-* Lucide React
-* React Datepicker
-* QR Code React
-* CSS modular separado por vistas
-* Vercel para despliegue web
+* React.
+* Vite.
+* React Router DOM.
+* Axios.
+* Lucide React.
+* React DatePicker.
+* QRCode React.
+* HTML.
+* CSS.
 
 ### Backend
 
-* Node.js
-* Express
-* SQLite
-* JWT
-* bcryptjs
-* CORS
-* dotenv
-* Render para despliegue del servidor
+* Node.js.
+* Express.
+* SQLite.
+* JSON Web Token.
+* bcryptjs.
+* CORS.
+* dotenv.
 
-### Base de datos
+### Herramientas de desarrollo
 
-* SQLite para desarrollo, pruebas y demo web.
+* Visual Studio Code.
+* Git.
+* GitHub.
+* Postman.
+* Vercel.
+* Render.
+
+---
+
+## Arquitectura del sistema
+
+El sistema utiliza una arquitectura cliente-servidor.
+
+```txt
+Usuario público
+     ↓
+Frontend React + Vite
+     ↓
+API REST Node.js + Express
+     ↓
+Base de datos SQLite
+```
+
+```txt
+Administrador Aduana
+     ↓
+Login con JWT
+     ↓
+Dashboard / Validaciones / Detalle / Escáner QR
+     ↓
+API REST
+     ↓
+SQLite
+```
+
+El frontend se encarga de la interfaz visual y la interacción del usuario.
+El backend procesa la lógica de negocio, autenticación, validaciones y almacenamiento de datos.
+La base de datos SQLite guarda la información del prototipo.
 
 ---
 
 ## Estructura general del proyecto
 
 ```txt
-sistema-aduanas/
+sistema-aduanas-final/
 ├── backend/
 │   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── tramites.controller.js
+│   │   ├── usuarios.controller.js
+│   │   ├── vehiculos.controller.js
+│   │   ├── validaciones.controller.js
+│   │   ├── reportes.controller.js
+│   │   ├── historial.controller.js
+│   │   └── dev.controller.js
 │   ├── database/
+│   │   └── db.js
 │   ├── middleware/
+│   │   └── auth.middleware.js
 │   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── tramites.routes.js
+│   │   ├── usuarios.routes.js
+│   │   ├── vehiculos.routes.js
+│   │   ├── validaciones.routes.js
+│   │   ├── reportes.routes.js
+│   │   ├── historial.routes.js
+│   │   └── dev.routes.js
 │   ├── utils/
+│   │   └── registrarAccion.js
 │   ├── server.js
 │   └── package.json
 │
 ├── frontend/
 │   ├── public/
+│   │   └── AduanasChile.webp
 │   ├── src/
 │   │   ├── api/
+│   │   │   └── api.js
 │   │   ├── components/
+│   │   │   └── Layout.jsx
 │   │   ├── pages/
+│   │   │   ├── Home.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── RegistroPaso.jsx
+│   │   │   ├── DetalleTramite.jsx
+│   │   │   ├── Validacion.jsx
+│   │   │   ├── Vehiculos.jsx
+│   │   │   ├── Usuarios.jsx
+│   │   │   └── EscanearQR.jsx
 │   │   ├── styles/
-│   │   └── utils/
+│   │   │   ├── global.css
+│   │   │   ├── home.css
+│   │   │   ├── login.css
+│   │   │   ├── dashboard.css
+│   │   │   ├── registroPaso.css
+│   │   │   ├── detalleTramite.css
+│   │   │   ├── validacion.css
+│   │   │   └── responsive.css
+│   │   ├── utils/
+│   │   │   ├── auth.js
+│   │   │   ├── escenariosPrueba.js
+│   │   │   └── exportarCSV.js
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── index.html
 │   ├── vercel.json
 │   └── package.json
 │
@@ -97,207 +368,82 @@ sistema-aduanas/
 
 ---
 
-## Roles del sistema
+## Base de datos
 
-### Administrador Aduana
+El sistema utiliza SQLite para el almacenamiento de datos.
 
-El administrador representa al funcionario de Aduana. Puede ingresar al sistema mediante login y acceder al panel privado.
+Tablas principales:
 
-Funciones principales:
-
-* Ver dashboard general.
-* Revisar trámites registrados.
-* Ver detalle completo de cada trámite.
-* Validar trámites.
-* Revisar alertas internas.
-* Consultar datos de personas y vehículos.
-* Ver nivel de riesgo aduanero.
-* Gestionar usuarios.
-* Limpiar registros de prueba desde el panel administrativo.
-
-### Persona
-
-La persona no necesita iniciar sesión. Ingresa directamente al formulario público de registro de paso fronterizo.
-
-Funciones principales:
-
-* Registrar datos personales.
-* Registrar datos del vehículo.
-* Completar declaración jurada.
-* Enviar el trámite a Aduana.
-* Recibir código de trámite.
-* Recibir comprobante digital con código QR.
+| Tabla              | Descripción                                             |
+| ------------------ | ------------------------------------------------------- |
+| usuarios           | Guarda las cuentas de administrador                     |
+| personas           | Guarda datos personales del viajero                     |
+| vehiculos          | Guarda información del vehículo o condición de pasajero |
+| tramites           | Guarda el trámite principal                             |
+| menores            | Guarda menores acompañantes asociados al trámite        |
+| documentos_tramite | Guarda documentos adjuntos                              |
+| declaraciones      | Guarda la declaración jurada                            |
+| alertas            | Guarda alertas generadas por el sistema                 |
+| validaciones       | Guarda validaciones administrativas                     |
+| historial_acciones | Guarda acciones realizadas por el administrador         |
 
 ---
 
-## Accesos principales
+## Rutas principales del frontend
 
-### Registro público de paso fronterizo
-
-```txt
-http://localhost:5173/
-```
-
-En producción:
-
-```txt
-https://sistema-aduanas-final.vercel.app/
-```
-
-### Login de Aduana
-
-```txt
-http://localhost:5173/admin
-```
-
-En producción:
-
-```txt
-https://sistema-aduanas-final.vercel.app/admin
-```
-
-### Panel de Aduana
-
-```txt
-http://localhost:5173/dashboard
-```
-
-En producción:
-
-```txt
-https://sistema-aduanas-final.vercel.app/dashboard
-```
+| Ruta            | Descripción                         |
+| --------------- | ----------------------------------- |
+| `/`             | Página principal                    |
+| `/registro`     | Registro público de paso fronterizo |
+| `/admin`        | Login administrador                 |
+| `/dashboard`    | Panel principal administrador       |
+| `/validacion`   | Validación de trámites              |
+| `/tramites/:id` | Detalle del trámite                 |
+| `/vehiculos`    | Gestión o consulta de vehículos     |
+| `/usuarios`     | Gestión de usuarios                 |
+| `/escanear-qr`  | Escaneo o búsqueda por QR           |
 
 ---
 
-## Usuario de prueba
+## Endpoints principales del backend
 
-| Rol                  | Usuario | Contraseña |
-| -------------------- | ------- | ---------- |
-| Administrador Aduana | admin   | admin123   |
-
----
-
-## Funcionalidades principales
-
-* Registro público de paso fronterizo sin login.
-* Login privado para Aduana.
-* Autenticación con JWT.
-* Contraseñas cifradas con bcryptjs.
-* Dashboard administrativo.
-* Registro de persona, vehículo y declaración jurada.
-* Código único de trámite con formato `ADU-2026-00001`.
-* Comprobante digital con código QR.
-* Modo claro y modo oscuro.
-* Diseño responsive compatible con smartphone.
-* Validaciones completas en el formulario público.
-* Formateo automático de RUT con puntos y guion.
-* Validación de RUT chileno mediante dígito verificador.
-* Selección de nacionalidad con opción personalizada.
-* Selector de prefijo telefónico internacional.
-* Campo personalizado para motivo de viaje cuando se selecciona “Otro”.
-* Semáforo inteligente de riesgo aduanero.
-* Detección automática de antecedentes por RUT/documento.
-* Detección automática de alertas vehiculares por patente.
-* Alertas internas visibles solo para Aduana.
-* Vista de detalle completo del trámite.
-* Validación simulada PDI/SAG/Aduana.
-* Herramientas de prueba para cargar escenarios automáticamente.
-* Limpieza de registros desde el panel de administrador.
+| Método | Ruta                           | Descripción                   |
+| ------ | ------------------------------ | ----------------------------- |
+| POST   | `/api/auth/login`              | Iniciar sesión administrador  |
+| POST   | `/api/tramites`                | Crear trámite público         |
+| GET    | `/api/tramites`                | Listar trámites               |
+| GET    | `/api/tramites/:id`            | Obtener detalle de trámite    |
+| GET    | `/api/tramites/codigo/:codigo` | Buscar trámite por código     |
+| PATCH  | `/api/tramites/:id/validar`    | Validar trámite               |
+| GET    | `/api/usuarios`                | Listar usuarios               |
+| POST   | `/api/usuarios`                | Crear usuario                 |
+| GET    | `/api/reportes`                | Obtener reportes              |
+| GET    | `/api/historial`               | Obtener historial de acciones |
 
 ---
 
-## Validaciones del formulario público
+## Instalación y ejecución local
 
-### Datos de la persona
+### Requisitos previos
 
-* Nombre obligatorio.
-* Apellido obligatorio.
-* Documento obligatorio.
-* RUT con formato automático y validación real.
-* Pasaporte/DNI con validación de longitud.
-* Nacionalidad obligatoria.
-* Nacionalidad personalizada sin números ni caracteres especiales.
-* Fecha de nacimiento obligatoria.
-* Fecha de nacimiento no puede ser futura.
-* Teléfono opcional con prefijo internacional.
-* Email opcional con formato válido.
+Tener instalado:
 
-### Datos del vehículo
-
-* Patente obligatoria.
-* País de origen obligatorio.
-* Marca obligatoria.
-* Modelo obligatorio.
-* Año validado si se ingresa.
-* Color validado si se ingresa.
-* Número de chasis opcional.
-* Número de motor opcional.
-
-### Declaración y viaje
-
-* Motivo del viaje obligatorio.
-* Motivo personalizado si se selecciona “Otro”.
-* Destino obligatorio.
-* Frontera fija: Complejo Los Libertadores.
-* Declaración de alimentos, vegetales, animales y dinero declarable.
-* Observaciones opcionales.
+* Node.js.
+* npm.
+* Git.
 
 ---
 
-## Semáforo inteligente de riesgo
-
-El sistema calcula automáticamente un nivel de riesgo al registrar un trámite.
-
-Niveles:
-
-```txt
-VERDE    = Bajo riesgo
-AMARILLO = Requiere revisión
-ROJO     = Alto riesgo
-```
-
-El cálculo considera factores como:
-
-* Persona con antecedente detectado por documento.
-* Vehículo con alerta detectada por patente.
-* Transporte de alimentos.
-* Transporte de vegetales.
-* Transporte de animales.
-* Declaración de dinero o valores.
-* Información sensible para revisión SAG/PDI/Aduana.
-
-La persona no ve los antecedentes ni el riesgo. Esa información queda disponible solo para el funcionario de Aduana.
-
----
-
-## Escenarios de prueba
-
-El sistema incluye escenarios rápidos para completar automáticamente el formulario público.
-
-Ejemplos de escenarios:
-
-* Persona sin riesgo.
-* Persona con antecedente.
-* Declaración SAG.
-* Alto riesgo.
-
-Esto permite probar el sistema rápidamente sin escribir todos los datos manualmente.
-
----
-
-## Ejecutar el proyecto localmente
-
-### 1. Clonar el repositorio
+### Clonar repositorio
 
 ```bash
-git clone URL_DEL_REPOSITORIO
-cd sistema-aduanas
+git clone https://github.com/Missaldur1/sistema-aduanas-final.git
+cd sistema-aduanas-final
 ```
 
 ---
 
-## Backend
+## Ejecutar backend
 
 Entrar a la carpeta del backend:
 
@@ -311,7 +457,16 @@ Instalar dependencias:
 npm install
 ```
 
-Ejecutar servidor:
+Crear archivo `.env` en la carpeta `backend`:
+
+```env
+PORT=3001
+JWT_SECRET=aduanas_chile_sistema_2026_clave_segura
+FRONTEND_URLS=http://localhost:5173
+NODE_ENV=development
+```
+
+Ejecutar backend:
 
 ```bash
 npm run dev
@@ -325,9 +480,9 @@ http://localhost:3001
 
 ---
 
-## Frontend
+## Ejecutar frontend
 
-Entrar a la carpeta del frontend:
+En otra terminal, entrar a la carpeta del frontend:
 
 ```bash
 cd frontend
@@ -337,6 +492,12 @@ Instalar dependencias:
 
 ```bash
 npm install
+```
+
+Crear archivo `.env` en la carpeta `frontend`:
+
+```env
+VITE_API_URL=http://localhost:3001/api
 ```
 
 Ejecutar frontend:
@@ -353,256 +514,221 @@ http://localhost:5173
 
 ---
 
-## Ejecutar desde celular en la misma red
+## Credenciales de administrador
 
-Para abrir el sistema desde un celular conectado al mismo WiFi, ejecutar el frontend con:
-
-```bash
-npm run dev -- --host 0.0.0.0
-```
-
-Luego abrir en el celular la URL de red que muestra Vite, por ejemplo:
+Para ingresar al panel administrativo:
 
 ```txt
-http://192.168.1.35:5173/
+Usuario: admin
+Contraseña: admin123
 ```
+
+Estas credenciales son de prueba para el prototipo académico.
 
 ---
 
-## Variables de entorno
-
-### Frontend en Vercel
-
-```txt
-VITE_API_URL=https://sistema-aduanas-backend.onrender.com/api
-```
-
-### Backend en Render
-
-```txt
-NODE_ENV=production
-JWT_SECRET=clave_segura_del_proyecto
-FRONTEND_URLS=http://localhost:5173,https://sistema-aduanas-final.vercel.app
-NODE_VERSION=20
-```
-
----
-
-## Configuración de despliegue
-
-### Frontend en Vercel
-
-Configuración utilizada:
-
-```txt
-Framework Preset: Vite
-Root Directory: frontend
-Build Command: npm run build
-Output Directory: dist
-Install Command: npm install
-```
-
-Archivo necesario para rutas de React Router:
-
-```txt
-frontend/vercel.json
-```
-
-Contenido:
-
-```json
-{
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
-```
-
-### Backend en Render
-
-Configuración utilizada:
-
-```txt
-Language: Node
-Root Directory: backend
-Build Command: npm install
-Start Command: npm start
-```
-
-El backend usa Node 20 para evitar problemas de compatibilidad con SQLite.
-
----
-
-## Base de datos
-
-El sistema usa SQLite.
-
-La base de datos se genera en:
-
-```txt
-backend/aduanas.db
-```
-
-Tablas principales:
-
-```txt
-usuarios
-personas
-vehiculos
-tramites
-declaraciones
-alertas
-validaciones
-```
-
-En producción demo con Render, SQLite funciona para pruebas, pero para un sistema más estable se recomienda migrar a PostgreSQL, Supabase o Neon.
-
----
-
-## Archivos importantes
+## Despliegue
 
 ### Frontend
 
+El frontend fue desplegado en Vercel.
+
 ```txt
-frontend/src/pages/RegistroPaso.jsx
-frontend/src/pages/Login.jsx
-frontend/src/pages/Dashboard.jsx
-frontend/src/pages/Validacion.jsx
-frontend/src/pages/DetalleTramite.jsx
-frontend/src/components/Layout.jsx
-frontend/src/api/api.js
-frontend/src/utils/escenariosPrueba.js
-frontend/vercel.json
+https://sistema-aduanas-final.vercel.app/
 ```
 
 ### Backend
 
-```txt
-backend/server.js
-backend/database/db.js
-backend/controllers/tramites.controller.js
-backend/controllers/auth.controller.js
-backend/controllers/dev.controller.js
-backend/routes/tramites.routes.js
-backend/routes/auth.routes.js
-backend/routes/dev.routes.js
-backend/middleware/auth.middleware.js
-backend/utils/calcularRiesgo.js
-backend/utils/personasPrueba.js
-backend/utils/vehiculosPrueba.js
-```
-
----
-
-## Estilos CSS
-
-Los estilos están separados por pantalla o componente:
+El backend fue desplegado en Render.
 
 ```txt
-frontend/src/styles/global.css
-frontend/src/styles/login.css
-frontend/src/styles/layout.css
-frontend/src/styles/dashboard.css
-frontend/src/styles/registroPaso.css
-frontend/src/styles/registroVehiculo.css
-frontend/src/styles/validacion.css
-frontend/src/styles/detalleTramite.css
-frontend/src/styles/responsive.css
+https://sistema-aduanas-backend.onrender.com
+```
+
+### Variable de entorno frontend en Vercel
+
+```env
+VITE_API_URL=https://sistema-aduanas-backend.onrender.com/api
+```
+
+### Variables de entorno backend en Render
+
+```env
+NODE_ENV=production
+NODE_VERSION=20
+JWT_SECRET=aduanas_chile_sistema_2026_clave_segura
+FRONTEND_URLS=http://localhost:5173,https://sistema-aduanas-final.vercel.app
 ```
 
 ---
 
-## Recomendación para GitHub
+## Pruebas realizadas
 
-No subir archivos pesados, privados o generados automáticamente.
+Se realizaron pruebas funcionales sobre los principales módulos del sistema.
 
-El proyecto debe ignorar:
+| ID     | Módulo     | Prueba                            | Resultado esperado          | Estado   |
+| ------ | ---------- | --------------------------------- | --------------------------- | -------- |
+| CP-001 | Login      | Iniciar sesión como administrador | Acceso al dashboard         | Aprobado |
+| CP-002 | Login      | Contraseña incorrecta             | Mostrar mensaje de error    | Aprobado |
+| CP-003 | Registro   | Registrar trámite sin menores     | Generar comprobante QR      | Aprobado |
+| CP-004 | Registro   | Registrar trámite con menor       | Guardar menor asociado      | Aprobado |
+| CP-005 | Vehículo   | Registrar como chofer             | Exigir datos del vehículo   | Aprobado |
+| CP-006 | Vehículo   | Registrar como pasajero           | No exigir vehículo completo | Aprobado |
+| CP-007 | Documentos | Adjuntar PDF válido               | Guardar documento           | Aprobado |
+| CP-008 | Documentos | Adjuntar archivo no permitido     | Mostrar error               | Aprobado |
+| CP-009 | QR         | Buscar trámite por código         | Mostrar trámite encontrado  | Aprobado |
+| CP-010 | Admin      | Ver detalle del trámite           | Mostrar datos completos     | Aprobado |
+| CP-011 | Admin      | Validar trámite                   | Cambiar estado del trámite  | Aprobado |
+| CP-012 | Responsive | Probar en celular                 | Adaptar interfaz            | Aprobado |
+
+---
+
+## Validaciones implementadas
+
+### Persona
+
+* Nombre obligatorio.
+* Apellido obligatorio.
+* Documento obligatorio.
+* Nacionalidad obligatoria.
+* Fecha de nacimiento obligatoria.
+* Teléfono obligatorio.
+* Email obligatorio.
+
+### Documentos de identidad
+
+* RUT con formato automático y validación.
+* DNI con mínimo 7 y máximo 8 números.
+* DNI con puntos automáticos.
+* Pasaporte alfanumérico, en mayúsculas, entre 6 y 9 caracteres.
+
+### Menores
+
+* Nombre obligatorio.
+* Apellido obligatorio.
+* Documento obligatorio.
+* Nacionalidad obligatoria.
+* Fecha de nacimiento obligatoria.
+* Parentesco obligatorio.
+* Autorización o documento de viaje obligatorio.
+
+### Vehículo
+
+Si el usuario es chofer:
+
+* Tipo de vehículo obligatorio.
+* Patente obligatoria.
+* País de origen obligatorio.
+* Marca obligatoria.
+* Modelo obligatorio.
+
+Si el usuario es pasajero:
+
+* No se exigen datos completos del vehículo.
+* Se registra la condición de pasajero.
+* Puede agregar observación opcional.
+
+### Documentos adjuntos
+
+* Máximo 5 documentos.
+* Máximo 2 MB por archivo.
+* Solo PDF, JPG, JPEG o PNG.
+
+---
+
+## Control de cambios
+
+| Versión | Cambio               | Descripción                                         |
+| ------- | -------------------- | --------------------------------------------------- |
+| v1.0    | Estructura inicial   | Creación de frontend, backend y base SQLite         |
+| v1.1    | Login administrador  | Implementación de autenticación con JWT             |
+| v1.2    | Registro público     | Creación del formulario de paso fronterizo          |
+| v1.3    | Dashboard            | Implementación del panel administrativo             |
+| v1.4    | Validaciones         | Revisión y validación de trámites                   |
+| v1.5    | Comprobante QR       | Generación de comprobante digital                   |
+| v1.6    | Menores acompañantes | Registro de menores asociados al trámite            |
+| v1.7    | Documentos adjuntos  | Carga de documentos PDF e imágenes                  |
+| v1.8    | Diseño responsive    | Adaptación a dispositivos móviles                   |
+| v1.9    | Escáner QR           | Búsqueda de trámites por código QR                  |
+| v2.0    | Página principal     | Incorporación de home previo al registro            |
+| v2.1    | Modo claro/oscuro    | Tema visual en página principal y registro          |
+| v2.2    | Chofer o pasajero    | Diferenciación del formulario según rol en vehículo |
+| v2.3    | Exportación CSV      | Descarga de información administrativa              |
+| v2.4    | Historial            | Registro de acciones administrativas                |
+
+---
+
+## Capturas sugeridas
+
+Para documentar el sistema se recomienda agregar capturas de:
 
 ```txt
-node_modules/
-.env
-backend/.env
-frontend/.env
-backend/aduanas.db
-backend/*.db
-dist/
-frontend/dist/
-```
-
-Estos archivos deben estar incluidos en `.gitignore`.
-
----
-
-## Comandos útiles de Git
-
-Inicializar repositorio:
-
-```bash
-git init
-```
-
-Agregar cambios:
-
-```bash
-git add .
-```
-
-Crear commit:
-
-```bash
-git commit -m "Primer commit sistema aduanas"
-```
-
-Conectar con GitHub:
-
-```bash
-git remote add origin URL_DEL_REPOSITORIO
-```
-
-Subir a GitHub:
-
-```bash
-git branch -M main
-git push -u origin main
-```
-
-Para futuros cambios:
-
-```bash
-git add .
-git commit -m "Descripcion del cambio"
-git push
+1. Página principal.
+2. Modo oscuro de la página principal.
+3. Formulario de registro público.
+4. Sección datos de la persona.
+5. Sección menores acompañantes.
+6. Sección chofer / pasajero.
+7. Sección documentos adjuntos.
+8. Declaración y viaje.
+9. Comprobante digital con QR.
+10. Login administrador.
+11. Dashboard administrador.
+12. Validaciones.
+13. Detalle del trámite.
+14. Documentos adjuntos vistos por el administrador.
+15. Vista responsive desde celular.
 ```
 
 ---
 
-## Estado actual del proyecto
+## Limitaciones del prototipo
 
-El sistema actualmente cuenta con:
+Este sistema corresponde a un prototipo académico, por lo que algunas funcionalidades fueron simuladas.
 
-* Registro público funcional.
-* Login administrativo.
-* Panel de Aduana.
-* Registro en base de datos.
-* Validaciones completas de formulario.
-* Formateo automático de RUT.
-* Selector de nacionalidad y prefijo telefónico.
-* Validaciones simuladas PDI/SAG/Aduana.
-* Riesgo automático.
-* Alertas internas.
-* QR de trámite.
-* Modo oscuro.
-* Diseño responsive.
-* Herramientas de prueba.
-* Limpieza automática de registros desde el panel administrativo.
-* Frontend desplegado en Vercel.
-* Backend desplegado en Render.
+Limitaciones actuales:
+
+* No existe integración real con servicios de PDI, SAG o Aduanas.
+* Las validaciones de riesgo son internas y simuladas.
+* SQLite se utiliza como base de datos del prototipo.
+* Los documentos se almacenan en Base64 dentro de la base de datos.
+* Las credenciales de administrador son de prueba.
+
+---
+
+## Mejoras futuras
+
+Algunas mejoras que podrían implementarse son:
+
+* Integración real con organismos externos.
+* Uso de PostgreSQL o MySQL para producción.
+* Almacenamiento externo seguro para documentos.
+* Firma digital de documentos.
+* Notificaciones por correo electrónico.
+* Reportes PDF.
+* Roles separados para Aduanas, PDI y SAG.
+* Auditoría avanzada.
+* Panel estadístico más completo.
+* Historial detallado por trámite.
 
 ---
 
 ## Autor
 
-Proyecto desarrollado por Misael Rojas, como parte del Sistema Informático Integrado para Aduanas.
+Proyecto desarrollado por:
+
+```txt
+Misael Rojas
+Estudiante de Ingeniería en Informática
+DuocUc - PAO
+```
+
+---
+
+## Estado del proyecto
+
+```txt
+Prototipo funcional terminado
+```
+
+El sistema cuenta con frontend, backend, base de datos, autenticación administrativa, registro público, comprobante QR, carga de documentos, menores acompañantes, diferenciación entre chofer y pasajero, validaciones y despliegue web.
