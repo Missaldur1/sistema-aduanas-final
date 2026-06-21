@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { estaAutenticado, getUsuario } from "./utils/auth";
 
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import RegistroPaso from "./pages/RegistroPaso";
@@ -25,29 +26,24 @@ function RutaPrivada({ children, roles }) {
 function App() {
   return (
     <Routes>
-      {/* Página pública para personas */}
-      <Route path="/" element={<RegistroPaso publico />} />
+      <Route path="/" element={<Home />} />
       <Route path="/registro" element={<RegistroPaso publico />} />
-
-      {/* Login solo para Aduana/Admin */}
       <Route path="/admin" element={<Login />} />
-
-      {/* Rutas privadas del administrador */}
-
-      <Route
-        path="/escanear-qr"
-        element={
-          <RutaPrivada roles={["ADMIN"]}>
-            <EscanearQR />
-          </RutaPrivada>
-        }
-      />
 
       <Route
         path="/dashboard"
         element={
           <RutaPrivada roles={["ADMIN"]}>
             <Dashboard />
+          </RutaPrivada>
+        }
+      />
+
+      <Route
+        path="/escanear-qr"
+        element={
+          <RutaPrivada roles={["ADMIN"]}>
+            <EscanearQR />
           </RutaPrivada>
         }
       />
@@ -71,19 +67,19 @@ function App() {
       />
 
       <Route
-        path="/tramites/:id"
+        path="/usuarios"
         element={
           <RutaPrivada roles={["ADMIN"]}>
-            <DetalleTramite />
+            <Usuarios />
           </RutaPrivada>
         }
       />
 
       <Route
-        path="/usuarios"
+        path="/tramites/:id"
         element={
           <RutaPrivada roles={["ADMIN"]}>
-            <Usuarios />
+            <DetalleTramite />
           </RutaPrivada>
         }
       />
