@@ -61,13 +61,6 @@ function Home() {
               {modoOscuro ? <Sun size={16} /> : <Moon size={16} />}
               {modoOscuro ? "Modo claro" : "Modo oscuro"}
             </button>
-
-            <Link to="/registro" className="home-nav-link">
-              Registro
-            </Link>
-            <Link to="/admin" className="home-nav-link admin-link">
-              Admin
-            </Link>
           </div>
         </nav>
 
