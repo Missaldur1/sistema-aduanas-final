@@ -2025,11 +2025,9 @@ function RegistroPaso({ publico = false }) {
               {modoOscuro ? <Sun size={14} /> : <Moon size={14} />}
               {modoOscuro ? "Modo claro" : "Modo oscuro"}
             </button>
-
-            <a className="quick-action" href="/admin">
-              Ingreso Aduana
-            </a>
           </div>
+
+            
         </header>
 
         {!comprobante && (

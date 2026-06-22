@@ -531,3 +531,96 @@
     padding: 20px;
   }
 }
+
+/* ===== Logos institucionales Home ===== */
+
+.home-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.home-brand-logos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.home-brand-logo {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.home-logo-aduanas {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.home-logo-gobierno {
+  width: 88px;
+  height: 54px;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.home-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.home-brand-text strong {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.home-brand-text span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Móvil */
+@media (max-width: 640px) {
+  .home-brand {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .home-brand-logos {
+    gap: 8px;
+  }
+
+  .home-logo-aduanas {
+    width: 46px;
+    height: 46px;
+  }
+
+  .home-logo-gobierno {
+    width: 72px;
+    height: 46px;
+  }
+
+  .home-brand-text strong {
+    font-size: 14px;
+  }
+
+  .home-brand-text span {
+    font-size: 11px;
+  }
+}

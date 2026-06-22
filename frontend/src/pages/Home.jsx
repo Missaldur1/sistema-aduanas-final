@@ -36,10 +36,21 @@ function Home() {
       <section className="home-hero">
         <nav className="home-navbar">
           <div className="home-brand">
-            <div className="home-brand-logo">
-              <img src="/AduanasChile.webp" alt="Logo Aduanas Chile" />
+            <div className="home-brand-logos">
+              <img
+                src="/AduanasChile.webp"
+                alt="Logo Aduanas Chile"
+                className="home-logo-aduanas"
+              />
+          
+              <img
+                src="/gobierno-chile.png"
+                alt="Gobierno de Chile"
+                className="home-logo-gobierno"
+              />
             </div>
-            <div>
+            
+            <div className="home-brand-text">
               <strong>Aduanas Chile</strong>
               <span>Complejo Los Libertadores</span>
             </div>
