@@ -14,6 +14,16 @@ import api from "../api/api";
 import Layout from "../components/Layout";
 import { getUsuario } from "../utils/auth";
 
+function obtenerTextoVehiculo(tramite = {}) {
+  if (tramite.rol_viajero === "PASAJERO") {
+    return "Acompañante / Pasajero";
+  }
+
+  const patente = tramite.patente || "Sin patente";
+  const marca = tramite.marca || "Sin marca";
+  return `${patente} · ${marca}`;
+}
+
 function Dashboard() {
   const usuario = getUsuario();
 
@@ -22,6 +32,7 @@ function Dashboard() {
   }, []);
 
   const esAdmin = usuario?.rol === "ADMIN";
+  const mostrarMantenimiento = esAdmin && import.meta.env.DEV;
 
   const [tramites, setTramites] = useState([]);
   const [resumen, setResumen] = useState({
@@ -111,11 +122,9 @@ function Dashboard() {
       codigo: t.codigo_tramite || `#${t.id}`,
       persona: t.persona_nombre || "",
       documento: t.documento_numero || "",
-      vehiculo: t.patente || "",
-      marca: t.marca || "",
+      vehiculo: obtenerTextoVehiculo(t),
       destino: t.destino || "",
-      riesgo: t.nivel_riesgo || "VERDE",
-      puntaje: t.puntaje_riesgo ?? 0,
+      semaforo: t.nivel_riesgo || "VERDE",
       estado: t.estado || "",
       fecha: t.fecha || "",
     }));
@@ -132,7 +141,7 @@ function Dashboard() {
           : "Registra tu vehículo y consulta el estado de tu trámite."
       }
     >
-      {esAdmin && (
+      {mostrarMantenimiento && (
         <section className="admin-actions-card">
           <div>
             <p className="eyebrow">Mantenimiento</p>
@@ -201,9 +210,7 @@ function Dashboard() {
                   <tr key={t.id}>
                     <td>{t.codigo_tramite || `#${t.id}`}</td>
                     <td>{t.persona_nombre}</td>
-                    <td>
-                      {t.patente} · {t.marca}
-                    </td>
+                    <td>{obtenerTextoVehiculo(t)}</td>
                     <td>{t.destino}</td>
                     <td>
                       <span className={`risk-pill ${t.nivel_riesgo?.toLowerCase()}`}>
@@ -260,9 +267,7 @@ function Dashboard() {
             
                   <div>
                     <span>Vehículo</span>
-                    <strong>
-                      {t.patente} · {t.marca}
-                    </strong>
+                    <strong>{obtenerTextoVehiculo(t)}</strong>
                   </div>
             
                   <div>

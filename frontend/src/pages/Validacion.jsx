@@ -10,6 +10,14 @@ import api from "../api/api";
 import Layout from "../components/Layout";
 import { exportarCSV } from "../utils/exportarCSV";
 
+function obtenerTextoVehiculo(tramite = {}) {
+  if (tramite.rol_viajero === "PASAJERO") {
+    return "Acompañante / Pasajero";
+  }
+
+  return tramite.patente || "Sin patente";
+}
+
 function Validacion() {
   useEffect(() => {
     document.title = "Aduanas Chile - Validaciones";
@@ -83,10 +91,9 @@ function Validacion() {
       codigo: t.codigo_tramite || `#${t.id}`,
       persona: t.persona_nombre || "",
       documento: t.documento_numero || "",
-      vehiculo: t.patente || "",
+      vehiculo: obtenerTextoVehiculo(t),
       destino: t.destino || "",
-      riesgo: t.nivel_riesgo || "VERDE",
-      puntaje: t.puntaje_riesgo ?? 0,
+      semaforo: t.nivel_riesgo || "VERDE",
       estado: t.estado || "",
       accion_recomendada: t.accion_recomendada || "",
       resultado_pdi: t.resultado_pdi || "",
@@ -189,8 +196,7 @@ function Validacion() {
                 <th>Persona</th>
                 <th>Documento</th>
                 <th>Vehículo</th>
-                <th>Riesgo</th>
-                <th>Puntaje</th>
+                <th>Semáforo</th>
                 <th>Acción recomendada</th>
                 <th>Estado</th>
                 <th>Validar</th>
@@ -203,13 +209,12 @@ function Validacion() {
                   <td>{t.codigo_tramite || `#${t.id}`}</td>
                   <td>{t.persona_nombre}</td>
                   <td>{t.documento_numero}</td>
-                  <td>{t.patente}</td>
+                  <td>{obtenerTextoVehiculo(t)}</td>
                   <td>
                     <span className={`risk-pill ${t.nivel_riesgo?.toLowerCase()}`}>
                       {t.nivel_riesgo || "VERDE"}
                     </span>
                   </td>
-                  <td>{t.puntaje_riesgo ?? 0}</td>
                   <td>{t.accion_recomendada || "Revisión estándar"}</td>
                   <td>
                     <span className={`status-pill ${t.estado?.toLowerCase()}`}>
@@ -235,13 +240,13 @@ function Validacion() {
 
               {!tramitesFiltrados.length && !cargando && (
                 <tr>
-                  <td colSpan="9">No hay trámites que coincidan con los filtros.</td>
+                  <td colSpan="8">No hay trámites que coincidan con los filtros.</td>
                 </tr>
               )}
 
               {cargando && (
                 <tr>
-                  <td colSpan="9">Cargando trámites...</td>
+                  <td colSpan="8">Cargando trámites...</td>
                 </tr>
               )}
             </tbody>

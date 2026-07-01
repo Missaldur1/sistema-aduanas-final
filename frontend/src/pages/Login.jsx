@@ -9,8 +9,8 @@ function Login() {
   }, []);
   
   const navigate = useNavigate();
-  const [usuario, setUsuario] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [usuario, setUsuario] = useState("");
+  const [password, setPassword] = useState("");
   const [verPassword, setVerPassword] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -91,11 +91,6 @@ function Login() {
           </button>
         </form>
 
-        <div className="demo-users">
-          <button type="button" onClick={() => { setUsuario("admin"); setPassword("admin123"); }}>
-            Admin Aduana: admin / admin123
-          </button>
-        </div>
       </section>
     </main>
   );

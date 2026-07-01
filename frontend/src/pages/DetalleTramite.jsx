@@ -105,6 +105,7 @@ function DetalleTramite() {
 
   const menores = tramite?.menores || [];
   const documentos = tramite?.documentos || [];
+  const esPasajero = tramite?.rol_viajero === "PASAJERO";
 
   return (
     <Layout
@@ -148,7 +149,7 @@ function DetalleTramite() {
             >
               {tramite.nivel_riesgo || "VERDE"}
             </span>
-            <strong>{tramite.puntaje_riesgo ?? 0} puntos</strong>
+            <strong>Semáforo de revisión</strong>
             <small>{tramite.accion_recomendada || "Revisión estándar"}</small>
           </div>
 
@@ -215,40 +216,61 @@ function DetalleTramite() {
 
           <div className="detail-list">
             <p>
-              <strong>Tipo:</strong> {tramite.vehiculo_tipo}
+              <strong>Condición del viajero:</strong>{" "}
+              {tramite.condicion_viajero ||
+                (esPasajero ? "Acompañante / Pasajero" : "Chofer / Conductor")}
             </p>
-            <p>
-              <strong>Patente:</strong> {tramite.patente}
-            </p>
-            <p>
-              <strong>País de origen:</strong> {tramite.pais_origen}
-            </p>
-            <p>
-              <strong>Marca:</strong> {tramite.marca}
-            </p>
-            <p>
-              <strong>Modelo:</strong> {tramite.modelo}
-            </p>
-            <p>
-              <strong>Año:</strong> {tramite.anio || "No registrado"}
-            </p>
-            <p>
-              <strong>Color:</strong> {tramite.color || "No registrado"}
-            </p>
-            <p>
-              <strong>Chasis:</strong> {tramite.chasis || "No registrado"}
-            </p>
-            <p>
-              <strong>Motor:</strong> {tramite.motor || "No registrado"}
-            </p>
-            <p>
-              <strong>Antecedente vehículo:</strong>{" "}
-              {valorSiNo(tramite.antecedente_vehiculo)}
-            </p>
-            <p>
-              <strong>Detalle antecedente:</strong>{" "}
-              {tramite.vehiculo_detalle_antecedente || "Sin detalle"}
-            </p>
+
+            {esPasajero ? (
+              <>
+                <p>
+                  <strong>Datos del vehículo:</strong> No requeridos para pasajero.
+                </p>
+                <p>
+                  <strong>Observación:</strong>{" "}
+                  {tramite.observacion_pasajero ||
+                    "La persona indicó que viaja como acompañante o pasajero."}
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  <strong>Tipo:</strong> {tramite.vehiculo_tipo}
+                </p>
+                <p>
+                  <strong>Patente:</strong> {tramite.patente}
+                </p>
+                <p>
+                  <strong>País de origen:</strong> {tramite.pais_origen}
+                </p>
+                <p>
+                  <strong>Marca:</strong> {tramite.marca}
+                </p>
+                <p>
+                  <strong>Modelo:</strong> {tramite.modelo}
+                </p>
+                <p>
+                  <strong>Año:</strong> {tramite.anio || "No registrado"}
+                </p>
+                <p>
+                  <strong>Color:</strong> {tramite.color || "No registrado"}
+                </p>
+                <p>
+                  <strong>Chasis:</strong> {tramite.chasis || "No registrado"}
+                </p>
+                <p>
+                  <strong>Motor:</strong> {tramite.motor || "No registrado"}
+                </p>
+                <p>
+                  <strong>Antecedente vehículo:</strong>{" "}
+                  {valorSiNo(tramite.antecedente_vehiculo)}
+                </p>
+                <p>
+                  <strong>Detalle antecedente:</strong>{" "}
+                  {tramite.vehiculo_detalle_antecedente || "Sin detalle"}
+                </p>
+              </>
+            )}
           </div>
         </article>
 
@@ -460,7 +482,7 @@ function DetalleTramite() {
           ) : (
             <AlertTriangle size={24} />
           )}
-          <h3>Análisis inteligente de riesgo</h3>
+          <h3>Semáforo de revisión</h3>
         </div>
 
         <div className="risk-analysis-box">
@@ -473,9 +495,6 @@ function DetalleTramite() {
           </div>
 
           <div>
-            <p>
-              <strong>Puntaje:</strong> {tramite.puntaje_riesgo ?? 0} puntos
-            </p>
             <p>
               <strong>Motivos:</strong>{" "}
               {tramite.motivo_riesgo || "Sin factores de riesgo detectados"}
